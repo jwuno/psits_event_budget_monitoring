@@ -2,45 +2,74 @@
 include('../../includes/header.php');
 if ($_SESSION['role'] != 'president') {
     $_SESSION['error'] = "Access denied!";
-    header("Location: ../../login.php");
+    header("Location: ../../index.php");
     exit;
 }
 include('../../includes/db.php');
 
-$result = mysqli_query($conn, "SELECT * FROM proposals WHERE status='president_approved'");
+// Get approved proposals
+$query = "SELECT * FROM proposals WHERE status='Approved' ORDER BY date_submitted DESC";
+$result = mysqli_query($conn, $query);
 ?>
 
 <div class="dashboard-container">
-    <div class="dashboard-header">
+    <div class="page-header">
         <h1>Approved Proposals</h1>
+        <p>Proposals that have been approved</p>
     </div>
 
-    <div class="dashboard-cards">
-        <?php if(mysqli_num_rows($result) > 0): ?>
-            <table class="card" style="width:100%;">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Title</th>
-                        <th>Submitted By</th>
-                        <th>Date Submitted</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php while($row = mysqli_fetch_assoc($result)): ?>
-                        <tr>
-                            <td><?php echo $row['id']; ?></td>
-                            <td><?php echo $row['title']; ?></td>
-                            <td><?php echo $row['created_by']; ?></td>
-                            <td><?php echo $row['date_submitted']; ?></td>
-                            <td><?php echo $row['status']; ?></td>
-                        </tr>
-                    <?php endwhile; ?>
-                </tbody>
-            </table>
-        <?php else: ?>
-            <p class="card">No approved proposals yet.</p>
-        <?php endif; ?>
+    <?php if(mysqli_num_rows($result) > 0): ?>
+    <div class="proposals-grid">
+        <?php while($proposal = mysqli_fetch_assoc($result)): ?>
+        <div class="proposal-card">
+            <div class="proposal-header">
+                <h3><?php echo htmlspecialchars($proposal['title']); ?></h3>
+                <span class="status approved">Approved</span>
+            </div>
+            
+            <div class="proposal-details">
+                <p><strong>Proposed by:</strong> <?php echo htmlspecialchars($proposal['created_by']); ?></p>
+                <p><strong>Date Submitted:</strong> 
+                    <?php 
+                    if (isset($proposal['date_submitted']) && !empty($proposal['date_submitted'])) {
+                        echo date('M j, Y', strtotime($proposal['date_submitted']));
+                    } else {
+                        echo 'Not set';
+                    }
+                    ?>
+                </p>
+                <p><strong>Description:</strong> 
+                    <?php 
+                    if (isset($proposal['description'])) {
+                        echo substr($proposal['description'], 0, 100) . '...';
+                    } else {
+                        echo 'No description';
+                    }
+                    ?>
+                </p>
+            </div>
+            
+            <div class="proposal-actions">
+                <a href="view_proposal.php?id=<?php echo $proposal['id']; ?>" class="btn btn-view">
+                    <i class="fas fa-eye"></i> View Details
+                </a>
+            </div>
+        </div>
+        <?php endwhile; ?>
+    </div>
+    <?php else: ?>
+    <div class="empty-state">
+        <i class="fas fa-check-circle"></i>
+        <h3>No Approved Proposals</h3>
+        <p>There are no approved proposals yet.</p>
+    </div>
+    <?php endif; ?>
+
+    <div class="navigation-actions">
+        <a href="dashboard.php" class="btn btn-back">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
     </div>
 </div>
+
+<?php include('../../includes/footer.php'); ?>

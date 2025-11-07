@@ -2,60 +2,78 @@
 include('../../includes/header.php');
 if ($_SESSION['role'] != 'president') {
     $_SESSION['error'] = "Access denied!";
-    header("Location: ../../login.php");
+    header("Location: ../../index.php");
     exit;
 }
 include('../../includes/db.php');
 
-// Approve / Reject
-if (isset($_GET['action']) && isset($_GET['id'])) {
-    $id = intval($_GET['id']);
-    if ($_GET['action'] == 'approve') {
-        mysqli_query($conn, "UPDATE proposals SET status='president_approved' WHERE id=$id");
-    } elseif ($_GET['action'] == 'reject') {
-        mysqli_query($conn, "UPDATE proposals SET status='rejected' WHERE id=$id");
-    }
-    header("Location: pending_proposals.php");
-    exit;
-}
+// Get pending proposals - using correct status and column names
+$query = "SELECT * FROM proposals WHERE status='Pending' ORDER BY date_submitted DESC";
+$result = mysqli_query($conn, $query);
 
-$result = mysqli_query($conn, "SELECT * FROM proposals WHERE status='budget_approved'");
+if (!$result) {
+    die("Query failed: " . mysqli_error($conn));
+}
 ?>
 
 <div class="dashboard-container">
-    <div class="dashboard-header">
+    <div class="page-header">
         <h1>Pending Proposals</h1>
+        <p>Proposals awaiting your approval</p>
     </div>
 
-    <div class="dashboard-cards">
-        <?php if(mysqli_num_rows($result) > 0): ?>
-            <table class="card" style="width:100%;">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Title</th>
-                        <th>Submitted By</th>
-                        <th>Date Submitted</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php while($row = mysqli_fetch_assoc($result)): ?>
-                        <tr>
-                            <td><?php echo $row['id']; ?></td>
-                            <td><?php echo $row['title']; ?></td>
-                            <td><?php echo $row['created_by']; ?></td>
-                            <td><?php echo $row['date_submitted']; ?></td>
-                            <td>
-                                <a href="?action=approve&id=<?php echo $row['id']; ?>" class="btn">Approve</a>
-                                <a href="?action=reject&id=<?php echo $row['id']; ?>" class="btn" style="background:#e74c3c;">Reject</a>
-                            </td>
-                        </tr>
-                    <?php endwhile; ?>
-                </tbody>
-            </table>
-        <?php else: ?>
-            <p class="card">No pending proposals found.</p>
-        <?php endif; ?>
+    <?php if(mysqli_num_rows($result) > 0): ?>
+    <div class="proposals-grid">
+        <?php while($proposal = mysqli_fetch_assoc($result)): ?>
+        <div class="proposal-card">
+            <div class="proposal-header">
+                <h3><?php echo htmlspecialchars($proposal['title']); ?></h3>
+                <span class="status pending">Pending</span>
+            </div>
+            
+            <div class="proposal-details">
+                <p><strong>Proposed by:</strong> <?php echo htmlspecialchars($proposal['created_by']); ?></p>
+                <p><strong>Date Submitted:</strong> 
+                    <?php 
+                    if (isset($proposal['date_submitted']) && !empty($proposal['date_submitted'])) {
+                        echo date('M j, Y', strtotime($proposal['date_submitted']));
+                    } else {
+                        echo 'Not set';
+                    }
+                    ?>
+                </p>
+                <p><strong>Description:</strong> 
+                    <?php 
+                    if (isset($proposal['description'])) {
+                        echo substr($proposal['description'], 0, 100) . '...';
+                    } else {
+                        echo 'No description';
+                    }
+                    ?>
+                </p>
+            </div>
+            
+            <div class="proposal-actions">
+                <a href="view_proposal.php?id=<?php echo $proposal['id']; ?>" class="btn btn-view">
+                    <i class="fas fa-eye"></i> View Details
+                </a>
+            </div>
+        </div>
+        <?php endwhile; ?>
+    </div>
+    <?php else: ?>
+    <div class="empty-state">
+        <i class="fas fa-inbox"></i>
+        <h3>No Pending Proposals</h3>
+        <p>There are no proposals awaiting your approval at the moment.</p>
+    </div>
+    <?php endif; ?>
+
+    <div class="navigation-actions">
+        <a href="dashboard.php" class="btn btn-back">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
     </div>
 </div>
+
+<?php include('../../includes/footer.php'); ?>

@@ -25,14 +25,190 @@ body {
     font-size: 20px;
     margin: 0;
 }
+
+/* HEADER LAYOUT */
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
 .navbar-right {
+    display: flex;
+    align-items: center;
+}
+
+/* Make sure notification and profile are aligned */
+.notification-menu {
     position: relative;
 }
-.profile-icon {
-    font-size: 28px;
-    cursor: pointer;
+
+.profile-menu {
+    position: relative;
+}
+
+/* Notification icon styling */
+.notification-icon {
+    position: relative;
+    font-size: 1.3rem;
     color: #fff;
-    transition: 0.2s;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    transition: background 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+}
+
+.notification-icon:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+.notification-badge {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: #dc3545;
+    color: white;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+/* NOTIFICATIONS PAGE STYLES */
+.notifications-container {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    overflow: hidden;
+}
+
+.notification-actions {
+    margin-bottom: 20px;
+    text-align: right;
+}
+
+.btn-mark-read {
+    background: #28a745;
+    color: white;
+    padding: 8px 15px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 14px;
+    transition: background 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-mark-read:hover {
+    background: #218838;
+    color: white;
+}
+
+.notifications-list {
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.notification-item-large {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    padding: 20px;
+    border-bottom: 1px solid #e0e0e0;
+    transition: background 0.3s ease;
+}
+
+.notification-item-large:hover {
+    background: #f8f9fa;
+}
+
+.notification-item-large.unread {
+    background: #f0f7ff;
+    border-left: 4px solid #007bff;
+}
+
+.notification-item-large.read {
+    background: white;
+}
+
+.notification-icon-large {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #e9ecef;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6c757d;
+    flex-shrink: 0;
+}
+
+.notification-item-large.unread .notification-icon-large {
+    background: #007bff;
+    color: white;
+}
+
+.notification-content {
+    flex: 1;
+}
+
+.notification-message {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #333;
+}
+
+.notification-meta {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.notification-sender {
+    font-size: 12px;
+    color: #666;
+    font-weight: 500;
+}
+
+.notification-time {
+    font-size: 12px;
+    color: #999;
+}
+
+.unread-badge {
+    background: #dc3545;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+/* Empty state for notifications */
+.empty-state .fas.fa-bell-slash {
+    font-size: 4rem;
+    color: #ddd;
+    margin-bottom: 20px;
+}
+
+/* Profile icon styling */
+.profile-icon {
+    font-size: 2rem;
+    color: #fff;
+    cursor: pointer;
+    transition: color 0.3s ease;
 }
 .profile-icon:hover {
     color: #ffcc00;
@@ -75,14 +251,16 @@ body {
 
 /* DASHBOARD BANNER */
 .dashboard-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     max-width: 1200px;
-    margin: 40px auto;
-    padding: 25px 30px;
+    margin: 20px auto;
+    padding: 20px 30px;
     background: #0056b3;
     color: #fff;
     border-radius: 10px;
     box-shadow: 0 5px 20px rgba(0,0,0,0.05);
-    text-align: center;
 }
 .dashboard-banner h1 {
     font-size: 24px;
@@ -106,46 +284,87 @@ body {
 
 /* CARDS */
 .dashboard-cards {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 20px;
-    margin-bottom: 30px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 25px;
+    margin-bottom: 40px;
 }
+
 .card {
-    flex: 1 1 30%;
-    background: #fff;
+    background: white;
     padding: 25px;
-    border-radius: 10px;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.05);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    text-align: center;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
 }
+
+.card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+}
+
 .card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 }
+
 .card h3 {
     color: #002b5b;
-    margin-bottom: 10px;
+    margin-bottom: 15px;
     font-size: 18px;
+    font-weight: 600;
 }
-.card p {
-    font-size: 16px;
-    color: #555;
+
+.card p.count {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #002b5b;
+    margin: 10px 0;
 }
+
+.card .card-desc {
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 15px;
+    min-height: 20px;
+}
+
 .card .btn {
-    margin-top: 15px;
+    display: inline-block;
     background: #002b5b;
-    color: #fff;
-    padding: 8px 15px;
+    color: white;
+    padding: 10px 20px;
     border-radius: 6px;
     text-decoration: none;
     font-size: 14px;
-    transition: background 0.2s ease;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border: 2px solid #002b5b;
+    width: 100%;
 }
+
 .card .btn:hover {
-    background: #00509e;
+    background: transparent;
+    color: #002b5b;
 }
+
+/* Remove the card-icon styles if they're making it big */
+.card-icon {
+    display: none;
+}
+
+/* Color coding for cards */
+.card:nth-child(1)::before { background: #ffa726; }
+.card:nth-child(2)::before { background: #4caf50; }
+.card:nth-child(3)::before { background: #f44336; }
+.card:nth-child(4)::before { background: #17a2b8; }
 
 /* TABLES */
 .dashboard-table {
@@ -179,4 +398,606 @@ body {
 }
 .dashboard-table tr:hover {
     background-color: #f5f7fa;
+}
+
+/* BACK BUTTON STYLES */
+.navigation-actions {
+    text-align: center;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #6c757d;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 14px;
+    transition: background 0.3s ease;
+}
+
+.btn-back:hover {
+    background: #5a6268;
+    color: white;
+}
+
+/* STATUS BADGES */
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-badge.pending {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.status-badge.approved {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-badge.rejected {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.status-badge.budget_approved {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.status-badge.president_approved {
+    background: #d4edda;
+    color: #155724;
+}
+
+/* MESSAGES */
+.messages-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.alert {
+    padding: 12px 20px;
+    border-radius: 6px;
+    margin: 10px 0;
+    font-weight: 500;
+}
+
+.alert-success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.alert-error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+/* RECENT SUBMISSIONS SECTION */
+.recent-submissions {
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    margin-top: 30px;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.section-header h2 {
+    color: #002b5b;
+    margin: 0;
+}
+
+.btn-view-all {
+    background: #002b5b;
+    color: white;
+    padding: 8px 15px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 14px;
+    transition: background 0.3s ease;
+}
+
+.btn-view-all:hover {
+    background: #00509e;
+    color: white;
+}
+
+/* TABLE STYLES */
+.table-container {
+    overflow-x: auto;
+}
+
+.submissions-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.submissions-table th {
+    background: #f8f9fa;
+    padding: 12px 15px;
+    text-align: left;
+    font-weight: 600;
+    color: #002b5b;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.submissions-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #e0e0e0;
+    color: #555;
+}
+
+.submissions-table tr:hover {
+    background: #f8f9fa;
+}
+
+.proposal-title {
+    font-weight: 500;
+    color: #002b5b;
+}
+
+.btn-action {
+    background: #6c757d;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 12px;
+    transition: background 0.3s ease;
+}
+
+.btn-action:hover {
+    background: #5a6268;
+    color: white;
+}
+
+/* FORM STYLES */
+.form-container {
+    max-width: 800px;
+    margin: 0 auto;
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+}
+
+.proposal-form {
+    text-align: left;
+}
+
+.form-group {
+    margin-bottom: 25px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #002b5b;
+}
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: border-color 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #002b5b;
+}
+
+.form-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: flex-end;
+    margin-top: 30px;
+}
+
+.btn-submit {
+    background: #28a745;
+    color: white;
+    padding: 12px 25px;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.btn-submit:hover {
+    background: #218838;
+}
+
+.btn-cancel {
+    background: #6c757d;
+    color: white;
+    padding: 12px 25px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 600;
+    transition: background 0.3s ease;
+}
+
+.btn-cancel:hover {
+    background: #5a6268;
+    color: white;
+}
+
+/* DETAILED FORM STYLES */
+.form-section {
+    background: #f8f9fa;
+    padding: 25px;
+    border-radius: 8px;
+    margin-bottom: 25px;
+    border-left: 4px solid #002b5b;
+}
+
+.form-section h3 {
+    color: #002b5b;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.form-group small {
+    display: block;
+    margin-top: 5px;
+    color: #666;
+    font-size: 12px;
+}
+
+/* File input styling */
+.form-group input[type="file"] {
+    padding: 10px;
+    background: white;
+    border: 2px dashed #e0e0e0;
+    border-radius: 6px;
+    width: 100%;
+}
+
+.form-group input[type="file"]:focus {
+    border-color: #002b5b;
+    border-style: solid;
+}
+
+/* Date input styling */
+.form-group input[type="date"] {
+    padding: 12px 15px;
+}
+
+/* Number input styling */
+.form-group input[type="number"] {
+    padding: 12px 15px;
+}
+
+/* PROPOSAL DETAIL VIEW */
+.proposal-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.header-content h1 {
+    color: #002b5b;
+    margin: 0 0 10px 0;
+}
+
+.proposal-meta {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.submission-date {
+    color: #666;
+    font-size: 14px;
+}
+
+.proposal-detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 25px;
+    margin-bottom: 30px;
+}
+
+.detail-card {
+    background: white;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+}
+
+.detail-card.full-width {
+    grid-column: 1 / -1;
+}
+
+.detail-card h3 {
+    color: #002b5b;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 10px;
+}
+
+.detail-group {
+    margin-bottom: 20px;
+}
+
+.detail-group label {
+    font-weight: 600;
+    color: #333;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.detail-group span {
+    color: #555;
+}
+
+.budget-amount {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #28a745;
+}
+
+.budget-breakdown, .proposal-content {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 6px;
+    border-left: 4px solid #002b5b;
+    white-space: pre-line;
+}
+
+.attachment-link {
+    margin-top: 10px;
+}
+
+.btn-download {
+    background: #17a2b8;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 6px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.3s ease;
+}
+
+.btn-download:hover {
+    background: #138496;
+    color: white;
+}
+
+/* NOTIFICATION STYLES */
+.notification-menu {
+    position: relative;
+}
+
+.notification-icon {
+    position: relative;
+    font-size: 1.3rem;
+    color: #fff;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    transition: background 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+}
+
+.notification-icon:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+.notification-badge {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: #dc3545;
+    color: white;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.notification-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: white;
+    width: 350px;
+    border-radius: 8px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+    z-index: 1001;
+    margin-top: 10px;
+}
+
+.notification-dropdown.show {
+    display: block;
+}
+
+.notification-header {
+    padding: 15px;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.notification-header h4 {
+    margin: 0;
+    color: #002b5b;
+}
+
+.mark-read-btn {
+    background: none;
+    border: none;
+    color: #007bff;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.mark-read-btn:hover {
+    text-decoration: underline;
+}
+
+.notification-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.notification-item {
+    padding: 12px 15px;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background 0.3s ease;
+}
+
+.notification-item.unread {
+    background: #f8f9fa;
+    border-left: 3px solid #007bff;
+}
+
+.notification-item:hover {
+    background: #f0f4f8;
+}
+
+.notification-item p {
+    margin: 0 0 5px 0;
+    font-size: 14px;
+}
+
+.notification-item small {
+    color: #666;
+    font-size: 12px;
+}
+
+.notification-item.empty {
+    text-align: center;
+    color: #666;
+}
+
+.notification-footer {
+    padding: 10px 15px;
+    border-top: 1px solid #e0e0e0;
+    text-align: center;
+}
+
+.notification-footer a {
+    color: #007bff;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.notification-footer a:hover {
+    text-decoration: underline;
+}
+
+/* ACTION BUTTONS */
+.action-buttons {
+    display: flex;
+    gap: 15px;
+}
+
+.btn-approve-large {
+    background: #28a745;
+    color: white;
+    padding: 12px 25px;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.btn-approve-large:hover {
+    background: #218838;
+}
+
+.btn-reject-large {
+    background: #dc3545;
+    color: white;
+    padding: 12px 25px;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.btn-reject-large:hover {
+    background: #c82333;
+}
+
+/* EMPTY STATE */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #666;
+}
+
+.empty-state i {
+    font-size: 4rem;
+    color: #ddd;
+    margin-bottom: 20px;
+}
+
+.empty-state h3 {
+    color: #999;
+    margin-bottom: 10px;
+}
+
+.empty-state .btn {
+    margin-top: 15px;
 }
