@@ -1,19 +1,15 @@
 <?php
-// Try this instead of line 3 in header.php:
 require_once __DIR__ . '/../config/db_connect.php';
 
 if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
 
-// Include functions for notifications
 include('../../includes/functions.php');
 
-// Get current page and user role
 $current_page = basename($_SERVER['PHP_SELF']);
 $user_role = $_SESSION['role'] ?? 'guest';
 
-// Check database connection
 if (!$conn || $conn->connect_error) {
     die("Database connection failed: " . ($conn->connect_error ?? "Unknown error"));
 }
@@ -21,30 +17,6 @@ if (!$conn || $conn->connect_error) {
 
 <!DOCTYPE html>
 <html lang="en">
-
-<style>
-/* Emergency fix - hide dropdown initially */
-.dropdown {
-    display: none !important;
-}
-
-/* Make profile icon more visible */
-.profile-icon {
-    cursor: pointer;
-    font-size: 24px;
-    color: #333;
-    padding: 8px;
-    border-radius: 50%;
-    background: #f8f9fa;
-    border: 2px solid #007bff;
-}
-
-.profile-icon:hover {
-    background: #e9ecef;
-    transform: scale(1.1);
-}
-</style>
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -64,8 +36,7 @@ if (!$conn || $conn->connect_error) {
           <div class="notification-icon" id="notificationIcon">
               <i class="fas fa-bell"></i>
               <?php
-              // REMOVED the duplicate include('../../includes/db.php'); here
-              $unread_count = getUnreadNotifications($conn); // Remove $user_role parameter
+              $unread_count = getUnreadNotifications($conn);
               if ($unread_count > 0): ?>
               <span class="notification-badge"><?php echo $unread_count; ?></span>
               <?php endif; ?>
@@ -101,7 +72,9 @@ if (!$conn || $conn->connect_error) {
 
       <!-- Profile Menu -->
       <div class="profile-menu">
-        <i class="fas fa-user-circle profile-icon" id="profileIcon"></i>
+        <div class="profile-icon" id="profileIcon">
+          <i class="fas fa-user-circle"></i>
+        </div>
         <div class="dropdown" id="dropdownMenu">
           <p class="user-name">
             <?php echo isset($_SESSION['full_name']) ? $_SESSION['full_name'] : "Guest"; ?>
@@ -110,7 +83,9 @@ if (!$conn || $conn->connect_error) {
             Role: <?php echo ucfirst($user_role); ?>
           </p>
           <hr>
-          <a href="../../logout.php" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+          <button class="logout-btn" onclick="logout()">
+            <i class="fas fa-sign-out-alt"></i> Logout
+          </button>
         </div>
       </div>
     </div>
@@ -139,64 +114,86 @@ if (!$conn || $conn->connect_error) {
     <?php endif; ?>
 </div>
 
-<!-- Debug Script -->
+<!-- SIMPLE WORKING JAVASCRIPT -->
 <script>
-console.log("🔍 DEBUG: Checking page load...");
+// Simple working functions
+console.log("✅ JavaScript loaded!");
 
-// Check if elements exist
 const profileIcon = document.getElementById('profileIcon');
 const dropdownMenu = document.getElementById('dropdownMenu');
+const notificationIcon = document.getElementById('notificationIcon');
+const notificationDropdown = document.getElementById('notificationDropdown');
 
-console.log("Profile Icon:", profileIcon);
-console.log("Dropdown Menu:", dropdownMenu);
-console.log("Profile Icon exists:", !!profileIcon);
-console.log("Dropdown Menu exists:", !!dropdownMenu);
+// Initialize - hide dropdowns
+if (dropdownMenu) dropdownMenu.style.display = 'none';
+if (notificationDropdown) notificationDropdown.style.display = 'none';
 
+// Profile dropdown
 if (profileIcon && dropdownMenu) {
-    console.log("✅ Both elements found!");
-    
-    // Add simple click handler
     profileIcon.addEventListener('click', function(e) {
-        console.log("🎯 PROFILE ICON CLICKED!");
         e.stopPropagation();
+        console.log("🎯 Profile clicked");
         
-        // Toggle dropdown visibility
         if (dropdownMenu.style.display === 'block') {
             dropdownMenu.style.display = 'none';
-            console.log("📁 Dropdown hidden");
         } else {
             dropdownMenu.style.display = 'block';
-            console.log("📂 Dropdown shown");
+            // Hide notifications if open
+            if (notificationDropdown) notificationDropdown.style.display = 'none';
         }
-    });
-    
-    // Close when clicking outside
-    document.addEventListener('click', function(e) {
-        if (!profileIcon.contains(e.target) && !dropdownMenu.contains(e.target)) {
-            dropdownMenu.style.display = 'none';
-            console.log("📭 Click outside - dropdown hidden");
-        }
-    });
-    
-} else {
-    console.error("❌ Elements missing:", {
-        profileIcon: !!profileIcon,
-        dropdownMenu: !!dropdownMenu
     });
 }
 
-// Force show dropdown for testing
-setTimeout(() => {
-    console.log("🔄 Testing dropdown...");
-    if (dropdownMenu) {
-        dropdownMenu.style.display = 'block';
-        console.log("🔓 Dropdown forced open for testing");
+// Notifications dropdown
+if (notificationIcon && notificationDropdown) {
+    notificationIcon.addEventListener('click', function(e) {
+        e.stopPropagation();
+        console.log("🔔 Notifications clicked");
+        
+        if (notificationDropdown.style.display === 'block') {
+            notificationDropdown.style.display = 'none';
+        } else {
+            notificationDropdown.style.display = 'block';
+            // Hide profile if open
+            if (dropdownMenu) dropdownMenu.style.display = 'none';
+        }
+    });
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', function(e) {
+    if (dropdownMenu && dropdownMenu.style.display === 'block') {
+        if (!profileIcon.contains(e.target) && !dropdownMenu.contains(e.target)) {
+            dropdownMenu.style.display = 'none';
+        }
     }
-}, 1000);
+    if (notificationDropdown && notificationDropdown.style.display === 'block') {
+        if (!notificationIcon.contains(e.target) && !notificationDropdown.contains(e.target)) {
+            notificationDropdown.style.display = 'none';
+        }
+    }
+});
+
+// Logout function
+function logout() {
+    if (confirm('Are you sure you want to logout?')) {
+        window.location.href = '../../logout.php';
+    }
+}
+
+// Mark all as read
+function markAllAsRead() {
+    if (confirm('Mark all notifications as read?')) {
+        // Simple implementation - you can add fetch call later
+        const badge = document.querySelector('.notification-badge');
+        const markReadBtn = document.querySelector('.mark-read-btn');
+        if (badge) badge.remove();
+        if (markReadBtn) markReadBtn.style.display = 'none';
+        alert('Notifications marked as read!');
+    }
+}
+
+console.log("🎉 All functions ready!");
 </script>
-
-<!-- Your existing script -->
-<script src="../../assets/js/script.js"></script>
-
-<!-- IMPORTANT: Include the JavaScript file -->
-<script src="../../assets/js/script.js"></script>
+</body>
+</html>

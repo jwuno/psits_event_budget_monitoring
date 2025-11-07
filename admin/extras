@@ -1,0 +1,6 @@
+<!-- EMERGENCY LOGOUT BUTTON -->
+<div style="position: fixed; bottom: 20px; right: 20px; z-index: 10000;">
+    <button onclick="logout()" style="padding: 10px 15px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer;">
+        🔓 EMERGENCY LOGOUT
+    </button>
+</div>
