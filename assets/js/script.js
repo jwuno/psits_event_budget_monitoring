@@ -1,105 +1,80 @@
-document.addEventListener("DOMContentLoaded", function () {
-    // Profile dropdown functionality
-    const profileIcon = document.getElementById("profileIcon");
-    const dropdownMenu = document.getElementById("dropdownMenu");
+/* Dropdown Base Styles */
+.profile-menu, .notification-menu {
+    position: relative;
+    display: inline-block;
+}
 
-    if (profileIcon && dropdownMenu) {
-        profileIcon.addEventListener("click", function (e) {
-            e.stopPropagation();
-            dropdownMenu.classList.toggle("show");
-        });
+.profile-icon, .notification-icon {
+    cursor: pointer;
+    font-size: 24px;
+    color: #333;
+    padding: 8px;
+    border-radius: 50%;
+    background: #f8f9fa;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+}
 
-        // Close dropdown when clicking outside
-        document.addEventListener("click", function () {
-            dropdownMenu.classList.remove("show");
-        });
+.profile-icon:hover, .notification-icon:hover {
+    background: #e9ecef;
+    border-color: #007bff;
+    transform: scale(1.05);
+}
 
-        // Prevent dropdown from closing when clicking inside it
-        dropdownMenu.addEventListener("click", function (e) {
-            e.stopPropagation();
-        });
+.dropdown, .notification-dropdown {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 100%;
+    background: white;
+    min-width: 250px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border-radius: 8px;
+    z-index: 1000;
+    padding: 15px;
+    border: 1px solid #e0e0e0;
+}
 
-        // Add logout functionality to dropdown item
-        const logoutBtn = document.getElementById("logoutBtn"); // Add this ID to your logout button
-        if (logoutBtn) {
-            logoutBtn.addEventListener("click", function() {
-                window.location.href = 'logout.php';
-            });
-        }
-    }
+.dropdown.show, .notification-dropdown.show {
+    display: block;
+}
 
+.user-name {
+    font-weight: bold;
+    margin: 0 0 5px 0;
+    color: #2c3e50;
+}
 
-    // Notifications dropdown functionality
-    const notificationIcon = document.getElementById("notificationIcon");
-    const notificationDropdown = document.getElementById("notificationDropdown");
+.user-role {
+    color: #7f8c8d;
+    margin: 0 0 10px 0;
+    font-size: 14px;
+}
 
-    if (notificationIcon && notificationDropdown) {
-        notificationIcon.addEventListener("click", function (e) {
-            e.stopPropagation();
-            notificationDropdown.classList.toggle("show");
-        });
+.dropdown hr, .notification-dropdown hr {
+    margin: 10px 0;
+    border: none;
+    border-top: 1px solid #ecf0f1;
+}
 
-        // Close dropdown when clicking outside
-        document.addEventListener("click", function () {
-            notificationDropdown.classList.remove("show");
-        });
+.logout-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #e74c3c;
+    text-decoration: none;
+    padding: 8px 12px;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+    font-size: 14px;
+}
 
-        // Prevent dropdown from closing when clicking inside it
-        notificationDropdown.addEventListener("click", function (e) {
-            e.stopPropagation();
-        });
-    }
-
-    // Login form validation
-    const loginForm = document.querySelector(".login-form");
-    if (loginForm) {
-        loginForm.addEventListener("submit", function (e) {
-            const user = document.getElementById("username")?.value.trim();
-            const pass = document.getElementById("password")?.value.trim();
-
-            if (!user || !pass) {
-                alert("Please fill in all fields.");
-                e.preventDefault();
-            }
-        });
-    }
-});
-
-// Mark all notifications as read
-function markAllAsRead() {
-    fetch('../mark_notifications_read.php')
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.success) {
-                // Remove badge and refresh notifications
-                const badge = document.querySelector('.notification-badge');
-                if (badge) {
-                    badge.remove();
-                }
-                
-                // Mark all notifications as read in the UI
-                const unreadItems = document.querySelectorAll('.notification-item.unread');
-                unreadItems.forEach(item => {
-                    item.classList.remove('unread');
-                    item.classList.add('read');
-                });
-                
-                // Hide mark as read button
-                const markReadBtn = document.querySelector('.mark-read-btn');
-                if (markReadBtn) {
-                    markReadBtn.style.display = 'none';
-                }
-            } else {
-                alert('Error marking notifications as read');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Error marking notifications as read');
-        });
+.logout-btn:hover {
+    background-color: #ffeaea;
+    color: #c0392b;
 }

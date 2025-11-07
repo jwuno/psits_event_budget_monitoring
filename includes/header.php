@@ -1,8 +1,6 @@
 <?php
-// At the very top of header.php
-require_once 'config/db_connect.php'; // or the correct path
-// OR
-require_once 'includes/db.php'; // choose one, not both!
+// Try this instead of line 3 in header.php:
+require_once __DIR__ . '/../config/db_connect.php';
 
 if (session_status() == PHP_SESSION_NONE) {
     session_start();
@@ -14,10 +12,39 @@ include('../../includes/functions.php');
 // Get current page and user role
 $current_page = basename($_SERVER['PHP_SELF']);
 $user_role = $_SESSION['role'] ?? 'guest';
+
+// Check database connection
+if (!$conn || $conn->connect_error) {
+    die("Database connection failed: " . ($conn->connect_error ?? "Unknown error"));
+}
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
+
+<style>
+/* Emergency fix - hide dropdown initially */
+.dropdown {
+    display: none !important;
+}
+
+/* Make profile icon more visible */
+.profile-icon {
+    cursor: pointer;
+    font-size: 24px;
+    color: #333;
+    padding: 8px;
+    border-radius: 50%;
+    background: #f8f9fa;
+    border: 2px solid #007bff;
+}
+
+.profile-icon:hover {
+    background: #e9ecef;
+    transform: scale(1.1);
+}
+</style>
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -37,10 +64,8 @@ $user_role = $_SESSION['role'] ?? 'guest';
           <div class="notification-icon" id="notificationIcon">
               <i class="fas fa-bell"></i>
               <?php
-              include('../../includes/db.php');
-              if (!$conn) {
-              die("Database connection failed: " . mysqli_connect_error());}
-              $unread_count = getUnreadNotifications($conn, $user_role);
+              // REMOVED the duplicate include('../../includes/db.php'); here
+              $unread_count = getUnreadNotifications($conn); // Remove $user_role parameter
               if ($unread_count > 0): ?>
               <span class="notification-badge"><?php echo $unread_count; ?></span>
               <?php endif; ?>
@@ -113,6 +138,65 @@ $user_role = $_SESSION['role'] ?? 'guest';
         </div>
     <?php endif; ?>
 </div>
+
+<!-- Debug Script -->
+<script>
+console.log("🔍 DEBUG: Checking page load...");
+
+// Check if elements exist
+const profileIcon = document.getElementById('profileIcon');
+const dropdownMenu = document.getElementById('dropdownMenu');
+
+console.log("Profile Icon:", profileIcon);
+console.log("Dropdown Menu:", dropdownMenu);
+console.log("Profile Icon exists:", !!profileIcon);
+console.log("Dropdown Menu exists:", !!dropdownMenu);
+
+if (profileIcon && dropdownMenu) {
+    console.log("✅ Both elements found!");
+    
+    // Add simple click handler
+    profileIcon.addEventListener('click', function(e) {
+        console.log("🎯 PROFILE ICON CLICKED!");
+        e.stopPropagation();
+        
+        // Toggle dropdown visibility
+        if (dropdownMenu.style.display === 'block') {
+            dropdownMenu.style.display = 'none';
+            console.log("📁 Dropdown hidden");
+        } else {
+            dropdownMenu.style.display = 'block';
+            console.log("📂 Dropdown shown");
+        }
+    });
+    
+    // Close when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!profileIcon.contains(e.target) && !dropdownMenu.contains(e.target)) {
+            dropdownMenu.style.display = 'none';
+            console.log("📭 Click outside - dropdown hidden");
+        }
+    });
+    
+} else {
+    console.error("❌ Elements missing:", {
+        profileIcon: !!profileIcon,
+        dropdownMenu: !!dropdownMenu
+    });
+}
+
+// Force show dropdown for testing
+setTimeout(() => {
+    console.log("🔄 Testing dropdown...");
+    if (dropdownMenu) {
+        dropdownMenu.style.display = 'block';
+        console.log("🔓 Dropdown forced open for testing");
+    }
+}, 1000);
+</script>
+
+<!-- Your existing script -->
+<script src="../../assets/js/script.js"></script>
 
 <!-- IMPORTANT: Include the JavaScript file -->
 <script src="../../assets/js/script.js"></script>

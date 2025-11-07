@@ -203,50 +203,62 @@ body {
     margin-bottom: 20px;
 }
 
+
+
 /* Profile icon styling */
+.profile-menu {
+    position: relative;
+    display: inline-block;
+}
+
 .profile-icon {
-    font-size: 2rem;
-    color: #fff;
+    font-size: 28px;
+    color: #2c3e50;
     cursor: pointer;
-    transition: color 0.3s ease;
+    padding: 10px;
+    border-radius: 50%;
+    background-color: #f8f9fa;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
 }
+
 .profile-icon:hover {
-    color: #ffcc00;
+    background-color: #e9ecef;
+    border-color: #2c3e50;
 }
+
 .dropdown {
     display: none;
     position: absolute;
     right: 0;
-    top: 45px;
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.2);
-    width: 180px;
-    text-align: left;
-    overflow: hidden;
+    top: 100%;
+    background: white;
+    min-width: 200px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    border-radius: 5px;
     z-index: 1000;
+    padding: 15px;
 }
+
 .dropdown.show {
     display: block;
 }
-.dropdown p.user-name {
-    margin: 10px;
-    font-weight: bold;
-    color: #333;
-}
-.dropdown hr {
-    margin: 5px 0;
-    border: 0.5px solid #eee;
-}
+
 .logout-btn {
     display: block;
-    padding: 10px;
     color: #e74c3c;
     text-decoration: none;
-    transition: background 0.2s;
+    padding: 8px 12px;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
 }
+
 .logout-btn:hover {
-    background: #f8d7da;
+    background-color: #ffeaea;
+    color: #c0392b;
 }
 
 /* DASHBOARD BANNER */

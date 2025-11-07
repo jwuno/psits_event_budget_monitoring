@@ -19,7 +19,7 @@ if (isset($_GET['mark_all_read'])) {
 
 // Get all notifications for this role
 $notifications = getNotifications($conn, $_SESSION['role'], 50);
-$unread_count = getUnreadNotifications($conn, $_SESSION['role']);
+$unread_count = getUnreadNotifications($conn);
 ?>
 
 <div class="dashboard-container">
