@@ -8,140 +8,124 @@ if ($_SESSION['role'] != 'treasurer') {
 
 include('../../config/db_connect.php');
 
-// Get proposals waiting for treasurer review
-$pending_treasurer_sql = "SELECT * FROM proposals 
-                         WHERE status = 'pending'
-                         ORDER BY date_submitted DESC 
-                         LIMIT 5";
-$pending_treasurer_result = mysqli_query($conn, $pending_treasurer_sql);
-$pending_treasurer = mysqli_fetch_all($pending_treasurer_result, MYSQLI_ASSOC);
-
-// Budget statistics for pending proposals
-$budget_stats_sql = "SELECT 
+// Get counts for dashboard
+$counts_sql = "SELECT 
     COUNT(*) as total_proposals,
-    SUM(proposed_budget) as total_budget_requested,
-    AVG(proposed_budget) as avg_budget
-    FROM proposals 
-    WHERE status = 'pending'";
-$budget_stats_result = mysqli_query($conn, $budget_stats_sql);
-$budget_stats = mysqli_fetch_assoc($budget_stats_result);
-
-// Get financial overview
-$financial_sql = "SELECT 
-    SUM(CASE WHEN status = 'approved' THEN proposed_budget ELSE 0 END) as total_approved_budget,
-    SUM(CASE WHEN status = 'pending' THEN proposed_budget ELSE 0 END) as total_pending_budget,
-    COUNT(CASE WHEN status = 'approved' THEN 1 END) as approved_count,
-    COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_count
+    COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending,
+    COUNT(CASE WHEN status = 'approved' THEN 1 END) as approved,
+    COUNT(CASE WHEN status = 'rejected' THEN 1 END) as rejected,
+    SUM(CASE WHEN status = 'pending' THEN proposed_budget ELSE 0 END) as pending_budget,
+    SUM(CASE WHEN status = 'approved' THEN proposed_budget ELSE 0 END) as approved_budget
     FROM proposals";
-$financial_result = mysqli_query($conn, $financial_sql);
-$financial = mysqli_fetch_assoc($financial_result);
+$counts_result = mysqli_query($conn, $counts_sql);
+$counts = mysqli_fetch_assoc($counts_result);
+
+// Get recent pending proposals
+$recent_sql = "SELECT * FROM proposals WHERE status = 'pending' ORDER BY date_submitted DESC LIMIT 3";
+$recent_result = mysqli_query($conn, $recent_sql);
+$recent_proposals = mysqli_fetch_all($recent_result, MYSQLI_ASSOC);
 ?>
 
 <div class="dashboard-container">
     <div class="dashboard-header">
         <div class="header-content">
             <h1>Treasurer Dashboard</h1>
-            <p>Welcome, <strong><?php echo $_SESSION['full_name']; ?></strong>! Budget review and financial oversight.</p>
+            <p>Welcome, <strong><?php echo $_SESSION['full_name']; ?></strong>! Budget management and financial oversight.</p>
         </div>
     </div>
 
-    <!-- Financial Overview Cards -->
+    <!-- Stats Cards -->
     <div class="stats-cards">
         <div class="stat-card">
             <div class="stat-icon">⏳</div>
             <div class="stat-info">
-                <h3><?php echo $financial['pending_count']; ?></h3>
-                <p>Pending Review</p>
+                <h3><?php echo $counts['pending']; ?></h3>
+                <p>Pending Approval</p>
+                <a href="pending_reviews.php" class="stat-link">Review Pending</a>
             </div>
         </div>
+        
         <div class="stat-card">
-            <div class="stat-icon">💰</div>
+            <div class="stat-icon">📊</div>
             <div class="stat-info">
-                <h3>₱<?php echo number_format($financial['total_pending_budget'], 2); ?></h3>
-                <p>Pending Budget</p>
+                <h3><?php echo $counts['total_proposals']; ?></h3>
+                <p>Total Proposals</p>
+                <a href="all_proposals.php" class="stat-link">View All</a>
             </div>
         </div>
+        
         <div class="stat-card">
             <div class="stat-icon">✅</div>
             <div class="stat-info">
-                <h3><?php echo $financial['approved_count']; ?></h3>
+                <h3><?php echo $counts['approved']; ?></h3>
                 <p>Approved Proposals</p>
+                <a href="approved_proposals.php" class="stat-link">View Approved</a>
             </div>
         </div>
+        
         <div class="stat-card">
-            <div class="stat-icon">💸</div>
+            <div class="stat-icon">❌</div>
             <div class="stat-info">
-                <h3>₱<?php echo number_format($financial['total_approved_budget'], 2); ?></h3>
-                <p>Approved Budget</p>
+                <h3><?php echo $counts['rejected']; ?></h3>
+                <p>Rejected Proposals</p>
+                <a href="rejected_proposals.php" class="stat-link">View Rejected</a>
             </div>
         </div>
     </div>
 
-    <!-- Pending Budget Reviews -->
-    <div class="pending-reviews">
-        <div class="reviews-header">
-            <h3>Proposals Awaiting Budget Review</h3>
-            <?php if (!empty($pending_treasurer)): ?>
-                <a href="review_proposals.php" class="view-all">Review All</a>
-            <?php endif; ?>
+    <!-- Budget Overview -->
+    <div class="stats-cards">
+        <div class="stat-card">
+            <div class="stat-icon">💰</div>
+            <div class="stat-info">
+                <h3>₱<?php echo number_format($counts['pending_budget'], 2); ?></h3>
+                <p>Pending Budget</p>
+                <span class="stat-desc">Awaiting approval</span>
+            </div>
         </div>
-        <div class="reviews-list">
-            <?php if (!empty($pending_treasurer)): ?>
-                <?php foreach ($pending_treasurer as $proposal): ?>
-                    <div class="review-item">
-                        <div class="review-icon">📋</div>
-                        <div class="review-content">
-                            <p class="review-title"><?php echo htmlspecialchars($proposal['title']); ?></p>
-                            <div class="proposal-details">
-                                <span class="budget">₱<?php echo number_format($proposal['proposed_budget'], 2); ?></span>
-                                <span class="participants"><?php echo $proposal['expected_participants']; ?> participants</span>
-                                <span class="submitter">By: <?php echo htmlspecialchars($proposal['created_by']); ?></span>
+        
+        <div class="stat-card">
+            <div class="stat-icon">💸</div>
+            <div class="stat-info">
+                <h3>₱<?php echo number_format($counts['approved_budget'], 2); ?></h3>
+                <p>Approved Budget</p>
+                <span class="stat-desc">Total allocated</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Pending Proposals -->
+    <div class="recent-section">
+        <div class="section-header">
+            <h3>Recent Pending Proposals</h3>
+            <a href="pending_reviews.php" class="view-all">View All</a>
+        </div>
+        
+        <div class="recent-list">
+            <?php if (!empty($recent_proposals)): ?>
+                <?php foreach ($recent_proposals as $proposal): ?>
+                    <div class="recent-item">
+                        <div class="recent-icon">📋</div>
+                        <div class="recent-content">
+                            <h4><?php echo htmlspecialchars($proposal['title']); ?></h4>
+                            <div class="recent-details">
+                                <span>₱<?php echo number_format($proposal['proposed_budget'], 2); ?></span>
+                                <span><?php echo $proposal['expected_participants']; ?> participants</span>
+                                <span>By: <?php echo htmlspecialchars($proposal['created_by']); ?></span>
                             </div>
-                            <?php if (!empty($proposal['budget_breakdown'])): ?>
-                                <div class="budget-preview">
-                                    <strong>Budget Breakdown:</strong> 
-                                    <?php echo substr(strip_tags($proposal['budget_breakdown']), 0, 100); ?>...
-                                </div>
-                            <?php endif; ?>
-                            <span class="review-time">Submitted: <?php echo date('M j, Y g:i A', strtotime($proposal['date_submitted'])); ?></span>
                         </div>
-                        <div class="review-actions">
+                        <div class="recent-action">
                             <a href="review_proposal.php?id=<?php echo $proposal['id']; ?>" class="btn-review">
-                                <i class="fas fa-search-dollar"></i> Review Budget
+                                Review
                             </a>
                         </div>
                     </div>
                 <?php endforeach; ?>
             <?php else: ?>
                 <div class="empty-state">
-                    <div class="empty-icon">✅</div>
-                    <h4>All Caught Up!</h4>
-                    <p>No proposals awaiting budget review.</p>
+                    <p>No pending proposals for review.</p>
                 </div>
             <?php endif; ?>
-        </div>
-    </div>
-
-    <!-- Budget Summary -->
-    <div class="budget-summary">
-        <h3>Budget Overview</h3>
-        <div class="summary-cards">
-            <div class="summary-item">
-                <span class="label">Total Budget Pool</span>
-                <span class="value">₱150,000.00</span>
-            </div>
-            <div class="summary-item">
-                <span class="label">Allocated Budget</span>
-                <span class="value">₱<?php echo number_format($financial['total_approved_budget'], 2); ?></span>
-            </div>
-            <div class="summary-item">
-                <span class="label">Available Budget</span>
-                <span class="value">₱<?php echo number_format(150000 - $financial['total_approved_budget'], 2); ?></span>
-            </div>
-            <div class="summary-item">
-                <span class="label">Utilization Rate</span>
-                <span class="value"><?php echo number_format(($financial['total_approved_budget'] / 150000) * 100, 1); ?>%</span>
-            </div>
         </div>
     </div>
 </div>
