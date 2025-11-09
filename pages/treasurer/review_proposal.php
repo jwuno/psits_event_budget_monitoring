@@ -62,18 +62,40 @@ if (!$proposal) {
     header("Location: pending_reviews.php");
     exit;
 }
+
+// Get return URL from parameter or use default
+$return_url = isset($_GET['return']) ? $_GET['return'] : 'dashboard.php';
+
+// Validate the return URL to prevent security issues
+$allowed_pages = ['dashboard.php', 'pending_reviews.php', 'approved_proposals.php', 'rejected_proposals.php', 'all_proposals.php'];
+if (!in_array($return_url, $allowed_pages)) {
+    $return_url = 'dashboard.php';
+}
 ?>
 
 <div class="dashboard-container">
-    <div class="dashboard-header">
+    <div class="page-header">
         <div class="header-content">
             <h1>Review Proposal</h1>
             <p>Detailed budget review and approval</p>
         </div>
         <div class="header-actions">
-            <a href="pending_reviews.php" class="btn-back">← Back to Pending Reviews</a>
+            <?php
+            // Get return URL from parameter or use default
+            $return_url = isset($_GET['return']) ? $_GET['return'] : 'dashboard.php';
+            
+            // Validate the return URL to prevent security issues
+            $allowed_pages = ['dashboard.php', 'pending_reviews.php', 'approved_proposals.php', 'rejected_proposals.php', 'all_proposals.php'];
+            if (!in_array($return_url, $allowed_pages)) {
+                $return_url = 'dashboard.php';
+            }
+            ?>
+            <a href="<?php echo $return_url; ?>" class="btn btn-back">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
         </div>
     </div>
+    <!-- Rest of your existing content remains the same -->
 
     <?php if (isset($_SESSION['success'])): ?>
         <div class="alert alert-success"><?php echo $_SESSION['success']; unset($_SESSION['success']); ?></div>

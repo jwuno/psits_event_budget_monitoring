@@ -4,3 +4,18 @@
         🔓 EMERGENCY LOGOUT
     </button>
 </div>
+
+Secretary submits → Status: 'pending', Stage: 'treasurer'
+    ↓
+Treasurer APPROVES → Status: 'pending', Stage: 'president'
+Treasurer RETURNS → Status: 'returned', Stage: 'secretary' (with treasurer remarks)
+    ↓  
+Secretary adjusts → Status: 'pending', Stage: 'treasurer' (loop back)
+    ↓
+President APPROVES → Status: 'pending', Stage: 'adviser' 
+President RETURNS → Status: 'returned', Stage: 'treasurer' (with president remarks)
+    ↓
+Treasurer adjusts → Status: 'pending', Stage: 'president' (loop back)
+    ↓
+Adviser APPROVES → Status: 'approved', Stage: 'final'
+Adviser REJECTS → Status: 'rejected', Stage: 'final' (only adviser can final reject)

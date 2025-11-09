@@ -12,78 +12,63 @@ include('../../config/db_connect.php');
 $all_sql = "SELECT * FROM proposals ORDER BY date_submitted DESC";
 $all_result = mysqli_query($conn, $all_sql);
 $all_proposals = mysqli_fetch_all($all_result, MYSQLI_ASSOC);
-
-// Count by status
-$status_sql = "SELECT 
-    COUNT(*) as total,
-    COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending,
-    COUNT(CASE WHEN status = 'approved' THEN 1 END) as approved,
-    COUNT(CASE WHEN status = 'rejected' THEN 1 END) as rejected
-    FROM proposals";
-$status_result = mysqli_query($conn, $status_sql);
-$status_counts = mysqli_fetch_assoc($status_result);
 ?>
 
 <div class="dashboard-container">
-    <div class="dashboard-header">
-        <div class="header-content">
-            <h1>All Proposals</h1>
-            <p>Complete overview of all proposals</p>
-        </div>
-        <div class="header-actions">
-            <a href="dashboard.php" class="btn-back">← Back to Dashboard</a>
-        </div>
+    <div class="page-header">
+        <h1>All Proposals</h1>
+        <p>Complete overview of all proposals</p>
     </div>
 
-    <div class="stats-overview">
-        <div class="stat-overview">
-            <h3>Total Proposals</h3>
-            <p class="stat-number"><?php echo $status_counts['total']; ?></p>
-        </div>
-        <div class="stat-overview">
-            <h3>Pending</h3>
-            <p class="stat-number"><?php echo $status_counts['pending']; ?></p>
-        </div>
-        <div class="stat-overview">
-            <h3>Approved</h3>
-            <p class="stat-number"><?php echo $status_counts['approved']; ?></p>
-        </div>
-        <div class="stat-overview">
-            <h3>Rejected</h3>
-            <p class="stat-number"><?php echo $status_counts['rejected']; ?></p>
-        </div>
-    </div>
-
-    <div class="proposals-list">
-        <?php if (!empty($all_proposals)): ?>
-            <?php foreach ($all_proposals as $proposal): ?>
-                <div class="proposal-item status-<?php echo $proposal['status']; ?>">
-                    <div class="item-main">
-                        <h3><?php echo htmlspecialchars($proposal['title']); ?></h3>
-                        <div class="item-meta">
-                            <span class="budget">₱<?php echo number_format($proposal['proposed_budget'], 2); ?></span>
-                            <span class="participants"><?php echo $proposal['expected_participants']; ?> participants</span>
-                            <span class="creator">By: <?php echo htmlspecialchars($proposal['created_by']); ?></span>
-                            <span class="date"><?php echo date('M j, Y', strtotime($proposal['date_submitted'])); ?></span>
-                        </div>
-                    </div>
-                    <div class="item-status">
-                        <span class="status-badge status-<?php echo $proposal['status']; ?>">
+    <?php if (!empty($all_proposals)): ?>
+    <div class="table-container">
+        <table class="submissions-table">
+            <thead>
+                <tr>
+                    <th>Proposal Title</th>
+                    <th>Budget</th>
+                    <th>Participants</th>
+                    <th>Created By</th>
+                    <th>Date Submitted</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($all_proposals as $proposal): ?>
+                <tr>
+                    <td class="proposal-title"><?php echo htmlspecialchars($proposal['title']); ?></td>
+                    <td>₱<?php echo number_format($proposal['proposed_budget'], 2); ?></td>
+                    <td><?php echo $proposal['expected_participants']; ?> students</td>
+                    <td><?php echo htmlspecialchars($proposal['created_by']); ?></td>
+                    <td><?php echo date('M j, Y', strtotime($proposal['date_submitted'])); ?></td>
+                    <td>
+                        <span class="status-badge <?php echo strtolower($proposal['status']); ?>">
                             <?php echo ucfirst($proposal['status']); ?>
                         </span>
-                        <a href="review_proposal.php?id=<?php echo $proposal['id']; ?>" class="btn btn-sm">
-                            View
+                    </td>
+                    <td>
+                        <a href="review_proposal.php?id=<?php echo $proposal['id']; ?>&return=all_proposals.php" class="btn-action">
+                            <i class="fas fa-eye"></i> View
                         </a>
-                    </div>
-                </div>
-            <?php endforeach; ?>
-        <?php else: ?>
-            <div class="empty-state">
-                <div class="empty-icon">📋</div>
-                <h4>No Proposals</h4>
-                <p>There are no proposals in the system.</p>
-            </div>
-        <?php endif; ?>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+    <?php else: ?>
+    <div class="empty-state">
+        <i class="fas fa-inbox"></i>
+        <h3>No Proposals</h3>
+        <p>There are no proposals in the system.</p>
+    </div>
+    <?php endif; ?>
+
+    <div class="navigation-actions">
+        <a href="dashboard.php" class="btn btn-back">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
     </div>
 </div>
 

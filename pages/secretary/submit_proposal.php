@@ -22,16 +22,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $budget_breakdown = mysqli_real_escape_string($conn, $_POST['budget_breakdown']);
     $created_by = $_SESSION['full_name'];
     
-    // File upload handling (your existing code)
+    // File upload handling
     $attachment_path = null;
-    // ... your file upload code ...
+    if (isset($_FILES['attachment']) && $_FILES['attachment']['error'] == 0) {
+        $upload_dir = '../../assets/uploads/';
+        $file_name = time() . '_' . basename($_FILES['attachment']['name']);
+        if (move_uploaded_file($_FILES['attachment']['tmp_name'], $upload_dir . $file_name)) {
+            $attachment_path = $file_name;
+        }
+    }
     
-    // Insert into database with workflow status
+    // Insert into database
     $sql = "INSERT INTO proposals (
         title, event_date, venue, expected_participants, proposed_budget, 
         description, objectives, activities, expected_outcomes, budget_breakdown, 
-        attachment_path, created_by, status, current_stage, treasurer_status
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'under_review', 'treasurer', 'pending')";   
+        attachment_path, created_by, status, current_stage
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'under_review', 'treasurer')";   
     
     $stmt = mysqli_prepare($conn, $sql);
     
