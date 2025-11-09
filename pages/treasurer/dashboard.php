@@ -115,7 +115,7 @@ $recent_proposals = mysqli_fetch_all($recent_result, MYSQLI_ASSOC);
                             </div>
                         </div>
                         <div class="recent-action">
-                            <a href="review_proposal.php?id=<?php echo $proposal['id']; ?>" class="btn-review">
+                            <a href="review_proposal.php?id=<?php echo $proposal['id']; ?>&source=dashboard" class="btn-review">
                                 Review
                             </a>
                         </div>

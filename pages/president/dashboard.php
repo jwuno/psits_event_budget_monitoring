@@ -5,6 +5,10 @@ if ($_SESSION['role'] != 'president') {
     header("Location: ../../index.php");
     exit;
 }
+
+// Load president-specific CSS
+echo '<link rel="stylesheet" href="/psits_event_budget_monitoring/assets/css/president-dashboard.css">';
+
 include('../../includes/db.php');
 
 // Counts - using your actual status values
@@ -20,26 +24,50 @@ $total = $total_result ? mysqli_fetch_assoc($total_result)['total'] : 0;
 ?>
 
 <div class="dashboard-container">
-    <div class="dashboard-cards">
-        <div class="card">
-            <h3>Pending Approval</h3>
-            <p><?php echo $pending; ?></p>
-            <a href="pending_proposals.php" class="btn">View Pending</a>
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+        <div class="header-content">
+            <h1>President Dashboard</h1>
+            <p>Welcome, <strong><?php echo $_SESSION['full_name']; ?></strong>! Overview of all proposals and approvals.</p>
         </div>
-        <div class="card">
-            <h3>Approved Proposals</h3>
-            <p><?php echo $approved; ?></p>
-            <a href="approved_proposals.php" class="btn">View Approved</a>
+    </div>
+
+    <!-- Stats Cards Grid -->
+    <div class="stats-cards">
+        <div class="stat-card">
+            <div class="stat-icon">⏳</div>
+            <div class="stat-info">
+                <h3><?php echo $pending; ?></h3>
+                <p>Pending Approval</p>
+                <a href="pending_proposals.php" class="stat-link">Review Pending</a>
+            </div>
         </div>
-        <div class="card">
-            <h3>Rejected Proposals</h3>
-            <p><?php echo $rejected; ?></p>
-            <a href="rejected_proposals.php" class="btn">View Rejected</a>
+        
+        <div class="stat-card">
+            <div class="stat-icon">📊</div>
+            <div class="stat-info">
+                <h3><?php echo $total; ?></h3>
+                <p>Total Proposals</p>
+                <a href="all_proposals.php" class="stat-link">View All</a>
+            </div>
         </div>
-        <div class="card">
-            <h3>Total Proposals</h3>
-            <p><?php echo $total; ?></p>
-            <a href="all_proposals.php" class="btn">View All</a>
+        
+        <div class="stat-card">
+            <div class="stat-icon">✅</div>
+            <div class="stat-info">
+                <h3><?php echo $approved; ?></h3>
+                <p>Approved Proposals</p>
+                <a href="approved_proposals.php" class="stat-link">View Approved</a>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">❌</div>
+            <div class="stat-info">
+                <h3><?php echo $rejected; ?></h3>
+                <p>Rejected Proposals</p>
+                <a href="rejected_proposals.php" class="stat-link">View Rejected</a>
+            </div>
         </div>
     </div>
 </div>

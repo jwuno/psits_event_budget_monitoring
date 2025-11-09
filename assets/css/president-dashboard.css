@@ -1,0 +1,9 @@
+/* President Dashboard Specific Styles */
+.dashboard-header { 
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); 
+}
+
+.stat-card:nth-child(1) { border-left-color: #e74c3c; }
+.stat-card:nth-child(2) { border-left-color: #c0392b; }
+.stat-card:nth-child(3) { border-left-color: #27ae60; }
+.stat-card:nth-child(4) { border-left-color: #229954; }

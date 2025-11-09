@@ -8,6 +8,8 @@ if ($_SESSION['role'] != 'treasurer') {
 
 include('../../config/db_connect.php');
 
+$current_page = 'approved';
+
 // Get approved proposals
 $approved_sql = "SELECT * FROM proposals WHERE status = 'approved' ORDER BY review_date DESC";
 $approved_result = mysqli_query($conn, $approved_sql);
@@ -44,7 +46,7 @@ $budget_total = mysqli_fetch_assoc($budget_result)['total_approved'];
     <div class="proposals-grid">
         <?php if (!empty($approved_proposals)): ?>
             <?php foreach ($approved_proposals as $proposal): ?>
-                <div class="proposal-card approved">
+                <div class="proposal-card status-<?php echo $proposal['status']; ?>">
                     <div class="card-header">
                         <h3><?php echo htmlspecialchars($proposal['title']); ?></h3>
                         <span class="budget-badge">₱<?php echo number_format($proposal['proposed_budget'], 2); ?></span>
@@ -70,16 +72,33 @@ $budget_total = mysqli_fetch_assoc($budget_result)['total_approved'];
                             </div>
                         </div>
 
+                        <?php if (!empty($proposal['budget_breakdown'])): ?>
+                            <div class="detail-section">
+                                <h4>Budget Breakdown</h4>
+                                <p><?php echo htmlspecialchars($proposal['budget_breakdown']); ?></p>
+                            </div>
+                        <?php else: ?>
+                            <div class="detail-section">
+                                <h4>Budget Breakdown</h4>
+                                <div class="empty-detail">No breakdown provided</div>
+                            </div>
+                        <?php endif; ?>
+
                         <?php if (!empty($proposal['budget_notes'])): ?>
                             <div class="detail-section">
                                 <h4>Budget Notes</h4>
                                 <p><?php echo htmlspecialchars($proposal['budget_notes']); ?></p>
                             </div>
+                        <?php else: ?>
+                            <div class="detail-section">
+                                <h4>Budget Notes</h4>
+                                <div class="empty-detail">No notes provided</div>
+                            </div>
                         <?php endif; ?>
                     </div>
 
                     <div class="card-actions">
-                        <a href="review_proposal.php?id=<?php echo $proposal['id']; ?>" class="btn btn-secondary">
+                        <a href="review_proposal.php?id=<?php echo $proposal['id']; ?>&source=<?php echo $current_page; ?>" class="btn btn-secondary">
                             View Details
                         </a>
                     </div>

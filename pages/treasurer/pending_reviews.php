@@ -8,6 +8,8 @@ if ($_SESSION['role'] != 'treasurer') {
 
 include('../../config/db_connect.php');
 
+$current_page = 'pending';
+
 // Get all pending proposals from database
 $pending_sql = "SELECT * FROM proposals WHERE status = 'pending' ORDER BY date_submitted DESC";
 $pending_result = mysqli_query($conn, $pending_sql);
@@ -28,7 +30,7 @@ $pending_proposals = mysqli_fetch_all($pending_result, MYSQLI_ASSOC);
     <div class="proposals-grid">
         <?php if (!empty($pending_proposals)): ?>
             <?php foreach ($pending_proposals as $proposal): ?>
-                <div class="proposal-card">
+                <div class="proposal-card status-<?php echo $proposal['status']; ?>">
                     <div class="card-header">
                         <h3><?php echo htmlspecialchars($proposal['title']); ?></h3>
                         <span class="budget-badge">₱<?php echo number_format($proposal['proposed_budget'], 2); ?></span>
@@ -48,12 +50,23 @@ $pending_proposals = mysqli_fetch_all($pending_result, MYSQLI_ASSOC);
                                 <strong>Event Date:</strong>
                                 <span><?php echo date('M j, Y', strtotime($proposal['event_date'])); ?></span>
                             </div>
+                            <div class="meta-item">
+                                <strong>Status:</strong>
+                                <span class="status-badge status-<?php echo $proposal['status']; ?>">
+                                    <?php echo ucwords(str_replace('_', ' ', $proposal['status'])); ?>
+                                </span>
+                            </div>
                         </div>
 
                         <?php if (!empty($proposal['budget_breakdown'])): ?>
                             <div class="detail-section">
                                 <h4>Budget Breakdown</h4>
                                 <p><?php echo htmlspecialchars($proposal['budget_breakdown']); ?></p>
+                            </div>
+                        <?php else: ?>
+                            <div class="detail-section">
+                                <h4>Budget Breakdown</h4>
+                                <div class="empty-detail">No breakdown provided</div>
                             </div>
                         <?php endif; ?>
                         
@@ -62,11 +75,16 @@ $pending_proposals = mysqli_fetch_all($pending_result, MYSQLI_ASSOC);
                                 <h4>Objectives</h4>
                                 <p><?php echo htmlspecialchars($proposal['objectives']); ?></p>
                             </div>
+                        <?php else: ?>
+                            <div class="detail-section">
+                                <h4>Objectives</h4>
+                                <div class="empty-detail">No objectives provided</div>
+                            </div>
                         <?php endif; ?>
                     </div>
 
                     <div class="card-actions">
-                        <a href="review_proposal.php?id=<?php echo $proposal['id']; ?>" class="btn btn-primary">
+                        <a href="review_proposal.php?id=<?php echo $proposal['id']; ?>&source=<?php echo $current_page; ?>" class="btn btn-primary">
                             Review Budget
                         </a>
                     </div>
@@ -77,7 +95,6 @@ $pending_proposals = mysqli_fetch_all($pending_result, MYSQLI_ASSOC);
                 <div class="empty-icon">✅</div>
                 <h4>All Caught Up!</h4>
                 <p>No proposals awaiting budget review.</p>
-                <a href="dashboard.php" class="btn btn-primary">Back to Dashboard</a>
             </div>
         <?php endif; ?>
     </div>
