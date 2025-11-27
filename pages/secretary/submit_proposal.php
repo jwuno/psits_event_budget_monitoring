@@ -28,10 +28,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     
     // Insert into database with workflow status
     $sql = "INSERT INTO proposals (
-        title, event_date, venue, expected_participants, proposed_budget, 
-        description, objectives, activities, expected_outcomes, budget_breakdown, 
-        attachment_path, created_by, status, current_stage, treasurer_status
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'under_review', 'treasurer', 'pending')";   
+    title, event_date, venue, expected_participants, proposed_budget, 
+    description, objectives, activities, expected_outcomes, budget_breakdown, 
+    attachment_path, created_by, status, current_stage, treasurer_status
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'treasurer', 'pending')";  
     
     $stmt = mysqli_prepare($conn, $sql);
     
@@ -47,8 +47,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             
             // Add notification for treasurer
             include('../../includes/functions.php');
-            $message = "New proposal submitted for budget review: " . $title . " by " . $created_by;
+            $message = "New proposal submitted by {$_SESSION['full_name']}: " . $title;
             addNotification($conn, 'treasurer', $message);
+
             
             $_SESSION['success'] = "Proposal submitted successfully! Sent to Treasurer for budget review.";
             header("Location: my_proposals.php");

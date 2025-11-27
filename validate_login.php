@@ -41,17 +41,17 @@ if(isset($_POST['login'])) {
                 break;
             default:
                 $_SESSION['error'] = "Invalid role detected!";
-                header("Location: login.php");
+                header("Location: index.php");
                 break;
         }
         exit;
     } else {
         $_SESSION['error'] = "Incorrect username or password!";
-        header("Location: login.php");
+        header("Location: index.php");
         exit;
     }
 } else {
-    header("Location: login.php");
+    header("Location: index.php");
     exit;
 }
 ?>

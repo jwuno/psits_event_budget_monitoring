@@ -40,9 +40,10 @@ $result = mysqli_query($conn, $query);
                         </span>
                     </td>
                     <td>
-                        <a href="view_proposal.php?id=<?php echo $proposal['id']; ?>" class="btn-action">
-                            <i class="fas fa-eye"></i> View
+                        <a href="view_proposal.php?id=<?php echo $row['id']; ?>" class="btn btn-view">
+                            View
                         </a>
+
                     </td>
                 </tr>
                 <?php endwhile; ?>

@@ -1,16 +1,13 @@
 <?php
-session_start();
-include('includes/db.php');
-include('includes/functions.php');
-
-if (!isset($_SESSION['role'])) {
-    echo json_encode(['success' => false]);
-    exit;
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
 }
 
-if (markNotificationsAsRead($conn, $_SESSION['role'])) {
-    echo json_encode(['success' => true]);
-} else {
-    echo json_encode(['success' => false]);
-}
-?>
+require_once __DIR__ . '/config/db_connect.php';
+require_once __DIR__ . '/includes/functions.php';
+
+markNotificationsAsRead($conn);
+
+$redirect = $_SERVER['HTTP_REFERER'] ?? 'index.php';
+header("Location: $redirect");
+exit;

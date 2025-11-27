@@ -8,7 +8,10 @@ if ($_SESSION['role'] != 'president') {
 include('../../includes/db.php');
 
 // Get pending proposals - using correct status and column names
-$query = "SELECT * FROM proposals WHERE status='Pending' ORDER BY date_submitted DESC";
+$query = "SELECT * FROM proposals 
+          WHERE status = 'pending'
+            AND current_stage = 'president'
+          ORDER BY date_submitted DESC";
 $result = mysqli_query($conn, $query);
 
 if (!$result) {
@@ -54,8 +57,8 @@ if (!$result) {
             </div>
             
             <div class="proposal-actions">
-                <a href="view_proposal.php?id=<?php echo $proposal['id']; ?>" class="btn btn-view">
-                    <i class="fas fa-eye"></i> View Details
+                <a href="review_proposal.php?id=<?php echo $proposal['id']; ?>" class="btn btn-view">
+                    <i class="fas fa-eye"></i> Review
                 </a>
             </div>
         </div>

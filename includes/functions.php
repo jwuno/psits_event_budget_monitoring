@@ -1,205 +1,64 @@
 <?php
-// functions.php - PHP Functions Only
-
-// Check if function exists to prevent redeclaration errors
-if (!function_exists('getUnreadNotifications')) {
-    function getUnreadNotifications($co) {
-        // Start session if not already started
-        if (session_status() == PHP_SESSION_NONE) {
-            session_start();
-        }
-        
-        $user_role = $_SESSION['role'] ?? null;
-        
-        if (!$user_role) {
-            return 0;
-        }
-        
-        // Initialize count
-        $count = 0;
-        
-        // Use user_role instead of user_id - matches your actual table structure
-        $sql = "SELECT COUNT(*) as count FROM notifications WHERE is_read = 0 AND user_role = ?";
-        $stmt = $co->prepare($sql);
-        
-        if (!$stmt) {
-            error_log("Prepare failed: " . $co->error);
-            return 0;
-        }
-        
-        $stmt->bind_param("s", $user_role);
-        
-        if (!$stmt->execute()) {
-            error_log("Execute failed: " . $stmt->error);
-            $stmt->close();
-            return 0;
-        }
-        
-        $result = $stmt->get_result();
-        if ($result) {
-            $row = $result->fetch_assoc();
-            $count = $row['count'] ?? 0;
-        }
-        
-        $stmt->close();
-        return $count;
-    }
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
 }
 
-if (!function_exists('getNotifications')) {
-    function getNotifications($conn, $user_role, $limit = 10) {
-        if (!$conn) {
-            error_log("Database connection is invalid");
-            return [];
-        }
-        
-        $query = "SELECT * FROM notifications WHERE user_role = ? ORDER BY created_at DESC LIMIT ?";
-        $stmt = mysqli_prepare($conn, $query);
-        
-        if (!$stmt) {
-            error_log("Prepare failed: " . mysqli_error($conn));
-            return [];
-        }
-        
-        mysqli_stmt_bind_param($stmt, "si", $user_role, $limit);
-        
-        if (!mysqli_stmt_execute($stmt)) {
-            error_log("Execute failed: " . mysqli_stmt_error($stmt));
-            mysqli_stmt_close($stmt);
-            return [];
-        }
-        
-        $result = mysqli_stmt_get_result($stmt);
-        $notifications = [];
-        
-        while ($row = mysqli_fetch_assoc($result)) {
-            $notifications[] = $row;
-        }
-        
-        mysqli_stmt_close($stmt);
-        return $notifications;
-    }
+require_once __DIR__ . '/../config/db_connect.php';
+
+// ================== NOTIFICATION HELPERS ==================
+
+function addNotification($conn, $user_role, $message, $created_by = 'System') {
+    $user_role  = mysqli_real_escape_string($conn, $user_role);
+    $message    = mysqli_real_escape_string($conn, $message);
+    $created_by = mysqli_real_escape_string($conn, $created_by);
+
+    $sql = "INSERT INTO notifications (user_role, message, is_read, created_at, created_by)
+            VALUES ('$user_role', '$message', 0, NOW(), '$created_by')";
+    mysqli_query($conn, $sql);
 }
 
-if (!function_exists('markNotificationsAsRead')) {
-    function markNotificationsAsRead($conn, $user_role) {
-        if (!$conn) {
-            error_log("Database connection is invalid");
-            return false;
-        }
-        
-        $query = "UPDATE notifications SET is_read = 1 WHERE user_role = ? AND is_read = 0";
-        $stmt = mysqli_prepare($conn, $query);
-        
-        if (!$stmt) {
-            error_log("Prepare failed: " . mysqli_error($conn));
-            return false;
-        }
-        
-        mysqli_stmt_bind_param($stmt, "s", $user_role);
-        $result = mysqli_stmt_execute($stmt);
-        
-        if (!$result) {
-            error_log("Update failed: " . mysqli_stmt_error($stmt));
-        }
-        
-        mysqli_stmt_close($stmt);
-        return $result;
-    }
+function getUnreadNotifications($conn) {
+    if (!isset($_SESSION['role'])) return 0;
+
+    $role = mysqli_real_escape_string($conn, $_SESSION['role']);
+    $sql  = "SELECT COUNT(*) AS cnt 
+             FROM notifications 
+             WHERE user_role = '$role' AND is_read = 0";
+    $res  = mysqli_query($conn, $sql);
+    $row  = mysqli_fetch_assoc($res);
+
+    return (int)($row['cnt'] ?? 0);
 }
 
-if (!function_exists('getAllNotifications')) {
-    function getAllNotifications($conn, $user_role, $limit = 50) {
-        if (!$conn) {
-            error_log("Database connection is invalid");
-            return [];
-        }
-        
-        $query = "SELECT * FROM notifications WHERE user_role = ? ORDER BY created_at DESC LIMIT ?";
-        $stmt = mysqli_prepare($conn, $query);
-        
-        if (!$stmt) {
-            error_log("Prepare failed: " . mysqli_error($conn));
-            return [];
-        }
-        
-        mysqli_stmt_bind_param($stmt, "si", $user_role, $limit);
-        
-        if (!mysqli_stmt_execute($stmt)) {
-            error_log("Execute failed: " . mysqli_stmt_error($stmt));
-            mysqli_stmt_close($stmt);
-            return [];
-        }
-        
-        $result = mysqli_stmt_get_result($stmt);
-        $notifications = [];
-        
-        while ($row = mysqli_fetch_assoc($result)) {
-            $notifications[] = $row;
-        }
-        
-        mysqli_stmt_close($stmt);
-        return $notifications;
+function getNotifications($conn, $limit = 50) {
+    if (!isset($_SESSION['role'])) return [];
+
+    $role  = mysqli_real_escape_string($conn, $_SESSION['role']);
+    $limit = (int)$limit;
+
+    $sql = "SELECT * FROM notifications
+            WHERE user_role = '$role'
+            ORDER BY created_at DESC
+            LIMIT $limit";
+    $res = mysqli_query($conn, $sql);
+
+    $data = [];
+    while ($row = mysqli_fetch_assoc($res)) {
+        $data[] = $row;
     }
+    return $data;
 }
 
-if (!function_exists('addNotification')) {
-    function addNotification($conn, $user_role, $message, $created_by = 'System') {
-        if (!$conn) {
-            error_log("Database connection is invalid");
-            return false;
-        }
-        
-        $query = "INSERT INTO notifications (user_role, message, is_read, created_by, created_at) VALUES (?, ?, 0, ?, NOW())";
-        $stmt = mysqli_prepare($conn, $query);
-        
-        if (!$stmt) {
-            error_log("Prepare failed: " . mysqli_error($conn));
-            return false;
-        }
-        
-        mysqli_stmt_bind_param($stmt, "sss", $user_role, $message, $created_by);
-        $result = mysqli_stmt_execute($stmt);
-        
-        mysqli_stmt_close($stmt);
-        return $result;
-    }
+function markNotificationsAsRead($conn) {
+    if (!isset($_SESSION['role'])) return;
+
+    $role = mysqli_real_escape_string($conn, $_SESSION['role']);
+    $sql  = "UPDATE notifications 
+             SET is_read = 1 
+             WHERE user_role = '$role' AND is_read = 0";
+    mysqli_query($conn, $sql);
 }
 
-if (!function_exists('getNotificationsForAllRoles')) {
-    function getNotificationsForAllRoles($conn, $limit = 10) {
-        if (!$conn) {
-            error_log("Database connection is invalid");
-            return [];
-        }
-        
-        $query = "SELECT * FROM notifications ORDER BY created_at DESC LIMIT ?";
-        $stmt = mysqli_prepare($conn, $query);
-        
-        if (!$stmt) {
-            error_log("Prepare failed: " . mysqli_error($conn));
-            return [];
-        }
-        
-        mysqli_stmt_bind_param($stmt, "i", $limit);
-        
-        if (!mysqli_stmt_execute($stmt)) {
-            error_log("Execute failed: " . mysqli_stmt_error($stmt));
-            mysqli_stmt_close($stmt);
-            return [];
-        }
-        
-        $result = mysqli_stmt_get_result($stmt);
-        $notifications = [];
-        
-        while ($row = mysqli_fetch_assoc($result)) {
-            $notifications[] = $row;
-        }
-        
-        mysqli_stmt_close($stmt);
-        return $notifications;
-    }
-}
 
 // Additional utility functions
 if (!function_exists('getUserRole')) {
