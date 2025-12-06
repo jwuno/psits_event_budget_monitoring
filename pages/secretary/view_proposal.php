@@ -1,210 +1,195 @@
 <?php
+// pages/secretary/view_proposal.php
+
 require_once '../../includes/auth.php';
-requireRole('secretary'); // 👈 IMPORTANT: must be 'secretary', not 'student' or anything else
+requireRole('secretary');
 
 require_once '../../config/db_connect.php';
 include '../../includes/header.php';
 
-$id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-if ($id <= 0) {
-    header('Location: dashboard.php');
+// Validate ID
+if (!isset($_GET['id']) || !ctype_digit($_GET['id'])) {
+    echo "<p>Invalid proposal ID.</p>";
+    include '../../includes/footer.php';
     exit;
 }
+$proposalId = (int) $_GET['id'];
 
-$sql = "SELECT * FROM proposals WHERE id = $id";
+// Fetch proposal + user full name
+$sql = "
+    SELECT p.*,
+           u.full_name AS prepared_by
+    FROM proposals p
+    LEFT JOIN users u
+        ON p.created_by = u.username
+    WHERE p.id = $proposalId
+    LIMIT 1
+";
 $res = mysqli_query($conn, $sql);
 
 if (!$res || mysqli_num_rows($res) === 0) {
-    ?>
-    <div class="dashboard">
-        <div class="card">
-            <h2>Proposal Not Found</h2>
-            <p>The requested proposal does not exist.</p>
-            <button type="button" class="btn btn-sm btn-primary" onclick="window.history.back();">
-                <i class="fa-solid fa-arrow-left"></i> Back
-            </button>
-        </div>
-    </div>
-    <?php
+    echo "<p>Proposal not found.</p>";
     include '../../includes/footer.php';
     exit;
 }
 
 $proposal = mysqli_fetch_assoc($res);
-$currentUser = $_SESSION['username'] ?? '';
-$canEdit = in_array($proposal['status'], ['pending', 'returned']) && $proposal['created_by'] === $currentUser;
+
+function e($v) {
+    return htmlspecialchars($v ?? '', ENT_QUOTES, 'UTF-8');
+}
+
+function formatStatusBadge($status) {
+    $status = strtolower((string)$status);
+    $class = 'status-badge status-pending';
+    $label = ucfirst($status);
+
+    if ($status === 'approved') {
+        $class = 'status-badge status-approved';
+    } elseif ($status === 'rejected') {
+        $class = 'status-badge status-rejected';
+    } elseif ($status === 'returned') {
+        $class = 'status-badge status-returned';
+    }
+
+    if ($status === '') {
+        $label = 'N/A';
+    }
+
+    return '<span class="' . $class . '">' . $label . '</span>';
+}
+
 ?>
-
 <div class="dashboard">
-    <div class="dashboard-header" style="display:flex;justify-content:space-between;align-items:center;gap:1rem;">
+    <!-- Page header -->
+    <div class="dashboard-header">
         <div>
-            <h1><?php echo htmlspecialchars($proposal['title']); ?></h1>
-            <p>Event proposal details and approval status.</p>
+            <h1>View Proposal</h1>
+            <p>Review the full details of this event and its approval status.</p>
         </div>
 
-        <div style="display:flex;gap:0.5rem;">
-            <?php if ($canEdit): ?>
-                <a href="edit_proposal.php?id=<?php echo (int)$proposal['id']; ?>" class="btn btn-sm btn-primary">
-                    <i class="fa-solid fa-pen"></i> Edit
-                </a>
+        <div class="page-actions">
+            <a href="dashboard.php" class="btn btn-outline btn-sm">
+                ← Back to Dashboard
+            </a>
+
+            <!-- 🔹 PRINT BUTTON HERE -->
+            <a href="../shared/print_proposal.php?id=<?php echo $proposal['id']; ?>"
+               target="_blank"
+               class="btn btn-outline btn-sm">
+                <i class="fa-solid fa-print"></i>
+                Print Proposal
+            </a>
+        </div>
+    </div>
+
+    <!-- Basic info card -->
+    <div class="card">
+        <div class="card-header">
+            <h2><?php echo e($proposal['title']); ?></h2>
+            <div style="font-size:0.85rem;color:#6b7280;">
+                Prepared by
+                <strong><?php echo e($proposal['prepared_by'] ?: $proposal['created_by']); ?></strong>
+                · Submitted
+                <?php echo e(!empty($proposal['date_submitted']) ? $proposal['date_submitted'] : 'N/A'); ?>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <div class="table-wrapper">
+                <table class="proposals-table">
+                    <tbody>
+                        <tr>
+                            <th style="width:200px;">Event Date</th>
+                            <td><?php echo e($proposal['event_date']); ?></td>
+                        </tr>
+                        <tr>
+                            <th>Venue</th>
+                            <td><?php echo e($proposal['venue']); ?></td>
+                        </tr>
+                        <tr>
+                            <th>Target Participants</th>
+                            <td><?php echo e($proposal['participants'] ?? 'N/A'); ?></td>
+                        </tr>
+                        <tr>
+                            <th>Proposed Budget</th>
+                            <td>₱<?php echo number_format((float)($proposal['proposed_budget'] ?? 0), 2); ?></td>
+                        </tr>
+                        <tr>
+                            <th>Overall Status</th>
+                            <td><?php echo formatStatusBadge($proposal['status']); ?></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Description / Objectives -->
+    <?php if (!empty($proposal['description']) || !empty($proposal['objectives'])): ?>
+        <div class="grid-2">
+            <?php if (!empty($proposal['description'])): ?>
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Event Description / Rationale</h2>
+                    </div>
+                    <div class="card-body">
+                        <p style="font-size:0.9rem;white-space:pre-wrap;">
+                            <?php echo e($proposal['description']); ?>
+                        </p>
+                    </div>
+                </div>
             <?php endif; ?>
-            <button type="button" class="btn btn-sm" onclick="window.history.back();">
-                <i class="fa-solid fa-arrow-left"></i> Back
-            </button>
+
+            <?php if (!empty($proposal['objectives'])): ?>
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Objectives</h2>
+                    </div>
+                    <div class="card-body">
+                        <p style="font-size:0.9rem;white-space:pre-wrap;">
+                            <?php echo e($proposal['objectives']); ?>
+                        </p>
+                    </div>
+                </div>
+            <?php endif; ?>
         </div>
-    </div>
+    <?php endif; ?>
 
-    <!-- Status cards -->
+    <!-- Approval status/remarks -->
     <div class="card">
-        <div class="stats-grid" style="margin-top:0;">
-            <div class="stat-card">
-                <span class="stat-label">Overall Status</span>
-                <span class="stat-value">
-                    <?php echo ucfirst(htmlspecialchars($proposal['status'])); ?>
-                </span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-label">Current Stage</span>
-                <span class="stat-value">
-                    <?php echo ucfirst(htmlspecialchars($proposal['current_stage'])); ?>
-                </span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-label">Treasurer</span>
-                <span class="stat-value">
-                    <?php echo ucfirst(htmlspecialchars($proposal['treasurer_status'])); ?>
-                </span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-label">President</span>
-                <span class="stat-value">
-                    <?php echo ucfirst(htmlspecialchars($proposal['president_status'])); ?>
-                </span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-label">Adviser</span>
-                <span class="stat-value">
-                    <?php echo ucfirst(htmlspecialchars($proposal['adviser_status'])); ?>
-                </span>
-            </div>
+        <div class="card-header">
+            <h2>Approval Status &amp; Remarks</h2>
         </div>
-    </div>
-
-    <!-- Event info -->
-    <div class="card">
-        <h2>Event Information</h2>
-        <div class="table-wrapper">
-            <table class="proposals-table">
-                <tbody>
-                    <tr>
-                        <th style="width:220px;">Event Title</th>
-                        <td><?php echo htmlspecialchars($proposal['title']); ?></td>
-                    </tr>
-                    <tr>
-                        <th>Event Date</th>
-                        <td><?php echo htmlspecialchars($proposal['event_date']); ?></td>
-                    </tr>
-                    <tr>
-                        <th>Venue</th>
-                        <td><?php echo htmlspecialchars($proposal['venue']); ?></td>
-                    </tr>
-                    <tr>
-                        <th>Expected Participants</th>
-                        <td><?php echo htmlspecialchars($proposal['expected_participants']); ?></td>
-                    </tr>
-                    <tr>
-                        <th>Proposed Budget</th>
-                        <td>₱<?php echo number_format($proposal['proposed_budget'], 2); ?></td>
-                    </tr>
-                    <tr>
-                        <th>Submitted By</th>
-                        <td><?php echo htmlspecialchars($proposal['created_by']); ?></td>
-                    </tr>
-                    <tr>
-                        <th>Date Submitted</th>
-                        <td><?php echo htmlspecialchars($proposal['date_submitted']); ?></td>
-                    </tr>
-                    <tr>
-                        <th>Returned From</th>
-                        <td><?php echo $proposal['returned_from'] ? htmlspecialchars($proposal['returned_from']) : '—'; ?></td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <!-- Description, breakdown, attachment -->
-    <div class="card">
-        <h2>Proposal Details</h2>
-
-        <h3 style="font-size:0.95rem;margin-top:0.2rem;">Description / Rationale</h3>
-        <p style="white-space:pre-wrap;margin-top:0.25rem;">
-            <?php
-            echo ($proposal['description'] !== null && $proposal['description'] !== '')
-                ? htmlspecialchars($proposal['description'])
-                : 'No description provided.';
-            ?>
-        </p>
-
-        <h3 style="font-size:0.95rem;margin-top:1rem;">Budget Breakdown</h3>
-        <p style="white-space:pre-wrap;margin-top:0.25rem;">
-            <?php
-            echo ($proposal['budget_breakdown'] !== null && $proposal['budget_breakdown'] !== '')
-                ? htmlspecialchars($proposal['budget_breakdown'])
-                : 'No budget breakdown provided.';
-            ?>
-        </p>
-
-        <?php if (!empty($proposal['attachment_path'])): ?>
-            <h3 style="font-size:0.95rem;margin-top:1rem;">Attachment</h3>
-            <p style="margin-top:0.25rem;">
-                <a class="btn btn-sm btn-primary"
-                   href="<?php echo '../../' . htmlspecialchars($proposal['attachment_path']); ?>"
-                   target="_blank">
-                    <i class="fa-solid fa-file-arrow-down"></i> View / Download Attachment
-                </a>
-            </p>
-        <?php endif; ?>
-    </div>
-
-    <!-- Remarks -->
-    <div class="card">
-        <h2>Remarks</h2>
-        <div class="table-wrapper">
-            <table class="proposals-table">
-                <tbody>
-                    <tr>
-                        <th style="width:220px;">Treasurer Remarks</th>
-                        <td>
-                            <?php
-                            echo ($proposal['treasurer_remarks'] !== null && $proposal['treasurer_remarks'] !== '')
-                                ? nl2br(htmlspecialchars($proposal['treasurer_remarks']))
-                                : 'None.';
-                            ?>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th>President Remarks</th>
-                        <td>
-                            <?php
-                            echo ($proposal['president_remarks'] !== null && $proposal['president_remarks'] !== '')
-                                ? nl2br(htmlspecialchars($proposal['president_remarks']))
-                                : 'None.';
-                            ?>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th>Adviser Remarks</th>
-                        <td>
-                            <?php
-                            echo ($proposal['adviser_remarks'] !== null && $proposal['adviser_remarks'] !== '')
-                                ? nl2br(htmlspecialchars($proposal['adviser_remarks']))
-                                : 'None.';
-                            ?>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+        <div class="card-body">
+            <div class="table-wrapper">
+                <table class="proposals-table">
+                    <thead>
+                        <tr>
+                            <th>Stage</th>
+                            <th>Status</th>
+                            <th>Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Treasurer</td>
+                            <td><?php echo formatStatusBadge($proposal['treasurer_status'] ?? ''); ?></td>
+                            <td><?php echo e($proposal['treasurer_remarks'] ?? ''); ?></td>
+                        </tr>
+                        <tr>
+                            <td>President</td>
+                            <td><?php echo formatStatusBadge($proposal['president_status'] ?? ''); ?></td>
+                            <td><?php echo e($proposal['president_remarks'] ?? ''); ?></td>
+                        </tr>
+                        <tr>
+                            <td>Adviser</td>
+                            <td><?php echo formatStatusBadge($proposal['adviser_status'] ?? ''); ?></td>
+                            <td><?php echo e($proposal['adviser_remarks'] ?? ''); ?></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>

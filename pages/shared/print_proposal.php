@@ -1,245 +1,433 @@
 <?php
-/**
- * PROPOSAL SUMMARY REPORT (Printable)
- * -----------------------------------
- * Used by Adviser/President/Any role to print or export PDF.
- */
+// pages/shared/print_proposal.php
+
+// Optional: only allow logged-in users
+session_start();
+if (!isset($_SESSION['user_id'])) {
+    header('Location: ../../index.php');
+    exit;
+}
 
 require_once '../../config/db_connect.php';
-require_once '../../includes/functions.php';
 
-session_start();
+// Get proposal id
+if (!isset($_GET['id']) || !ctype_digit($_GET['id'])) {
+    die('Invalid proposal ID.');
+}
+$proposalId = (int) $_GET['id'];
 
-$proposal_id = $_GET['id'] ?? 0;
-if (!$proposal_id) {
-    die("Invalid proposal ID");
+// Fetch proposal + prepared by
+$sql = "
+    SELECT p.*,
+           u.full_name AS prepared_by
+    FROM proposals p
+    LEFT JOIN users u
+        ON p.created_by = u.username
+    WHERE p.id = $proposalId
+    LIMIT 1
+";
+
+$res = mysqli_query($conn, $sql);
+if (!$res || mysqli_num_rows($res) === 0) {
+    die('Proposal not found.');
 }
 
-// Fetch proposal details
-$stmt = $conn->prepare("SELECT * FROM proposals WHERE id = ?");
-$stmt->bind_param("i", $proposal_id);
-$stmt->execute();
-$proposal = $stmt->get_result()->fetch_assoc();
+$proposal = mysqli_fetch_assoc($res);
 
-if (!$proposal) {
-    die("Proposal not found.");
+// Helper for safe output
+function e($value) {
+    return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
 }
 
-// Format data
-function clean($value) {
-    return !empty($value) ? nl2br(htmlspecialchars($value)) : '<em>Not provided</em>';
-}
+// Format dates
+$eventDate = !empty($proposal['event_date'])
+    ? date('F d, Y', strtotime($proposal['event_date']))
+    : 'N/A';
 
+$dateSubmitted = !empty($proposal['date_submitted'])
+    ? date('F d, Y', strtotime($proposal['date_submitted']))
+    : 'N/A';
+
+// Status text
+function formatStatus($s) {
+    if ($s === null || $s === '') return 'N/A';
+    return ucfirst($s);
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Proposal Summary Report - <?php echo htmlspecialchars($proposal['title']); ?></title>
-  <style>
-    body {
-      font-family: 'Poppins', sans-serif;
-      background: #fff;
-      color: #222;
-      margin: 2rem;
-    }
+    <meta charset="UTF-8">
+    <title>Printable Proposal - <?php echo e($proposal['title']); ?></title>
+    <style>
+        /* ============================
+           PRINT LAYOUT
+           ============================ */
+        * {
+            box-sizing: border-box;
+        }
 
-    .report-header {
-      text-align: center;
-      border-bottom: 3px solid #003366;
-      padding-bottom: 10px;
-      margin-bottom: 20px;
-    }
+        body {
+            font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+            background: #f3f4f6;
+            color: #111827;
+            margin: 0;
+            padding: 20px;
+        }
 
-    .report-header h1 {
-      color: #003366;
-      margin: 0;
-      font-size: 1.8rem;
-    }
+        .print-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 26px 30px;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(15, 23, 42, 0.18);
+        }
 
-    .report-meta {
-      text-align: center;
-      font-size: 0.9rem;
-      color: #555;
-      margin-bottom: 1.5rem;
-    }
+        .print-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 10px;
+            margin-bottom: 16px;
+        }
 
-    .report-section {
-      margin-bottom: 1.5rem;
-    }
+        .print-logo {
+            width: 56px;
+            height: 56px;
+            border-radius: 999px;
+            object-fit: cover;
+            border: 2px solid #e5e7eb;
+        }
 
-    .report-section h2 {
-      font-size: 1.1rem;
-      color: #003366;
-      border-left: 4px solid #003366;
-      padding-left: 10px;
-      margin-bottom: 0.5rem;
-    }
+        .print-heading {
+            display: flex;
+            flex-direction: column;
+        }
 
-    .report-section p {
-      font-size: 0.95rem;
-      line-height: 1.6;
-      text-align: justify;
-    }
+        .print-org {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: #6b7280;
+        }
 
-    .report-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 0.8rem;
-      font-size: 0.9rem;
-    }
+        .print-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+        }
 
-    .report-table th, .report-table td {
-      border: 1px solid #ccc;
-      padding: 8px 10px;
-      text-align: left;
-    }
+        .print-subtitle {
+            font-size: 0.85rem;
+            color: #4b5563;
+        }
 
-    .report-table th {
-      background: #003366;
-      color: #fff;
-    }
+        .print-meta {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: #4b5563;
+            margin-bottom: 12px;
+        }
 
-    .remarks-box {
-      background: #f7f9fc;
-      border: 1px solid #d8dee9;
-      border-radius: 6px;
-      padding: 10px 12px;
-      margin-bottom: 10px;
-    }
+        .section {
+            margin-top: 14px;
+        }
 
-    .signature-section {
-      margin-top: 2.5rem;
-      display: flex;
-      justify-content: space-around;
-    }
+        .section-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #374151;
+            margin-bottom: 6px;
+        }
 
-    .signature {
-      text-align: center;
-      margin-top: 40px;
-    }
+        .section-body {
+            font-size: 0.9rem;
+            color: #111827;
+            white-space: pre-wrap;
+        }
 
-    .signature-line {
-      border-top: 1px solid #333;
-      width: 200px;
-      margin: 0 auto 5px auto;
-    }
+        .info-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.2fr);
+            gap: 6px 18px;
+            font-size: 0.9rem;
+        }
 
-    .print-btn {
-      display: inline-block;
-      background: #003366;
-      color: #fff;
-      padding: 10px 16px;
-      border-radius: 8px;
-      text-decoration: none;
-      font-weight: 500;
-      transition: background 0.3s;
-    }
+        .info-label {
+            font-weight: 500;
+            color: #4b5563;
+        }
 
-    .print-btn:hover {
-      background: #0059b3;
-    }
+        .info-value {
+            color: #111827;
+        }
 
-    @media print {
-      .no-print {
-        display: none;
-      }
-      body {
-        margin: 1rem;
-      }
-    }
-  </style>
+        .status-row {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+            font-size: 0.85rem;
+        }
+
+        .status-box {
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 6px 8px;
+        }
+
+        .status-box strong {
+            display: block;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #6b7280;
+            margin-bottom: 2px;
+        }
+
+        .status-value {
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .remarks-text {
+            font-size: 0.85rem;
+            color: #374151;
+            white-space: pre-wrap;
+        }
+
+        .signatures {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 28px;
+            margin-top: 30px;
+            font-size: 0.85rem;
+        }
+
+        .signature-block {
+            text-align: center;
+        }
+
+        .signature-line {
+            border-bottom: 1px solid #9ca3af;
+            margin-bottom: 4px;
+            padding-top: 40px;
+        }
+
+        .signature-label {
+            color: #4b5563;
+        }
+
+        /* Screen-only top controls */
+        .print-controls {
+            max-width: 800px;
+            margin: 0 auto 12px auto;
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        .btn-print {
+            border-radius: 999px;
+            border: 1px solid #d1d5db;
+            background: #ffffff;
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+        }
+
+        .btn-print:hover {
+            background: #f3f4f6;
+        }
+
+        @media print {
+            body {
+                background: #ffffff;
+                padding: 0;
+            }
+
+            .print-controls {
+                display: none;
+            }
+
+            .print-container {
+                box-shadow: none;
+                border-radius: 0;
+                margin: 0;
+                max-width: 100%;
+            }
+        }
+    </style>
 </head>
 <body>
 
-  <div class="no-print" style="text-align:right;">
-    <a href="#" class="print-btn" onclick="window.print()">🖨 Print / Save PDF</a>
-  </div>
+<div class="print-controls">
+    <button class="btn-print" onclick="window.print()">
+        🖨 Print
+    </button>
+</div>
 
-  <div class="report-header">
-    <h1>Proposal Summary Report</h1>
-    <p><strong>BSIT Event Budget Monitoring Portal</strong></p>
-  </div>
-
-  <div class="report-meta">
-    <p><strong>Proposal Title:</strong> <?php echo htmlspecialchars($proposal['title']); ?></p>
-    <p><strong>Submitted by:</strong> <?php echo htmlspecialchars($proposal['created_by']); ?> | <strong>Date Submitted:</strong> <?php echo date('F j, Y', strtotime($proposal['date_submitted'])); ?></p>
-  </div>
-
-  <div class="report-section">
-    <h2>Event Information</h2>
-    <table class="report-table">
-      <tr><th>Event Date</th><td><?php echo htmlspecialchars($proposal['event_date']); ?></td></tr>
-      <tr><th>Venue</th><td><?php echo htmlspecialchars($proposal['venue']); ?></td></tr>
-      <tr><th>Expected Participants</th><td><?php echo htmlspecialchars($proposal['expected_participants']); ?></td></tr>
-      <tr><th>Proposed Budget</th><td>₱<?php echo number_format($proposal['proposed_budget'], 2); ?></td></tr>
-    </table>
-  </div>
-
-  <div class="report-section">
-    <h2>Description</h2>
-    <p><?php echo clean($proposal['description']); ?></p>
-  </div>
-
-  <div class="report-section">
-    <h2>Objectives</h2>
-    <p><?php echo clean($proposal['objectives']); ?></p>
-  </div>
-
-  <div class="report-section">
-    <h2>Activities</h2>
-    <p><?php echo clean($proposal['activities']); ?></p>
-  </div>
-
-  <div class="report-section">
-    <h2>Expected Outcomes</h2>
-    <p><?php echo clean($proposal['expected_outcomes']); ?></p>
-  </div>
-
-  <div class="report-section">
-    <h2>Budget Breakdown</h2>
-    <div class="remarks-box"><?php echo clean($proposal['budget_breakdown']); ?></div>
-  </div>
-
-  <div class="report-section">
-    <h2>Review Remarks</h2>
-
-    <?php if (!empty($proposal['treasurer_remarks'])): ?>
-      <div class="remarks-box"><strong>Treasurer:</strong><br><?php echo clean($proposal['treasurer_remarks']); ?></div>
-    <?php endif; ?>
-
-    <?php if (!empty($proposal['president_remarks'])): ?>
-      <div class="remarks-box"><strong>President:</strong><br><?php echo clean($proposal['president_remarks']); ?></div>
-    <?php endif; ?>
-
-    <?php if (!empty($proposal['adviser_remarks'])): ?>
-      <div class="remarks-box"><strong>Adviser:</strong><br><?php echo clean($proposal['adviser_remarks']); ?></div>
-    <?php endif; ?>
-
-    <?php if (empty($proposal['treasurer_remarks']) && empty($proposal['president_remarks']) && empty($proposal['adviser_remarks'])): ?>
-      <div class="remarks-box"><em>No review remarks recorded yet.</em></div>
-    <?php endif; ?>
-  </div>
-
-  <div class="report-section">
-    <h2>Final Status</h2>
-    <p><strong>Status:</strong> <?php echo ucfirst($proposal['status']); ?> | <strong>Stage:</strong> <?php echo ucfirst($proposal['current_stage']); ?></p>
-  </div>
-
-  <div class="signature-section">
-    <div class="signature">
-      <div class="signature-line"></div>
-      <p><strong>Treasurer</strong></p>
+<div class="print-container">
+    <!-- HEADER -->
+    <div class="print-header">
+        <img src="../../assets/img/psits.png" alt="PSITS Logo" class="print-logo">
+        <div class="print-heading">
+            <span class="print-org">Philippine Society of Information Technology Students</span>
+            <span class="print-title">Event Proposal &amp; Budget Form</span>
+            <span class="print-subtitle">BSIT – PSITS Pagadian Annex</span>
+        </div>
     </div>
-    <div class="signature">
-      <div class="signature-line"></div>
-      <p><strong>President</strong></p>
+
+    <!-- META -->
+    <div class="print-meta">
+        <div>
+            <strong>Prepared By:</strong>
+            <?php echo e($proposal['prepared_by'] ?: $proposal['created_by']); ?>
+        </div>
+        <div>
+            <strong>Date Submitted:</strong>
+            <?php echo e($dateSubmitted); ?>
+        </div>
+        <div>
+            <strong>Proposal ID:</strong>
+            #<?php echo e($proposal['id']); ?>
+        </div>
     </div>
-    <div class="signature">
-      <div class="signature-line"></div>
-      <p><strong>Adviser</strong></p>
+
+    <!-- BASIC INFO -->
+    <div class="section">
+        <div class="section-title">Event Information</div>
+        <div class="info-grid">
+            <div>
+                <span class="info-label">Event Title:</span>
+                <span class="info-value"><?php echo e($proposal['title']); ?></span>
+            </div>
+            <div>
+                <span class="info-label">Event Date:</span>
+                <span class="info-value"><?php echo e($eventDate); ?></span>
+            </div>
+            <div>
+                <span class="info-label">Venue:</span>
+                <span class="info-value"><?php echo e($proposal['venue'] ?? ''); ?></span>
+            </div>
+            <div>
+                <span class="info-label">Target Participants:</span>
+                <span class="info-value"><?php echo e($proposal['participants'] ?? 'N/A'); ?></span>
+            </div>
+            <div>
+                <span class="info-label">Proposed Budget (₱):</span>
+                <span class="info-value">
+                    ₱<?php echo number_format((float)($proposal['proposed_budget'] ?? 0), 2); ?>
+                </span>
+            </div>
+            <div>
+                <span class="info-label">Overall Status:</span>
+                <span class="info-value"><?php echo formatStatus($proposal['status'] ?? ''); ?></span>
+            </div>
+        </div>
     </div>
-  </div>
+
+    <!-- OBJECTIVES -->
+    <?php if (!empty($proposal['objectives'])): ?>
+        <div class="section">
+            <div class="section-title">Objectives</div>
+            <div class="section-body">
+                <?php echo e($proposal['objectives']); ?>
+            </div>
+        </div>
+    <?php endif; ?>
+
+    <!-- DESCRIPTION / RATIONALE -->
+    <?php if (!empty($proposal['description'])): ?>
+        <div class="section">
+            <div class="section-title">Event Description / Rationale</div>
+            <div class="section-body">
+                <?php echo e($proposal['description']); ?>
+            </div>
+        </div>
+    <?php endif; ?>
+
+    <!-- BUDGET NOTES -->
+    <?php if (!empty($proposal['budget_notes'])): ?>
+        <div class="section">
+            <div class="section-title">Budget Details / Notes</div>
+            <div class="section-body">
+                <?php echo e($proposal['budget_notes']); ?>
+            </div>
+        </div>
+    <?php endif; ?>
+
+    <!-- STATUS / REMARKS -->
+    <div class="section">
+        <div class="section-title">Approval Status</div>
+        <div class="status-row">
+            <div class="status-box">
+                <strong>Treasurer</strong>
+                <div class="status-value">
+                    <?php echo formatStatus($proposal['treasurer_status'] ?? ''); ?>
+                </div>
+                <?php if (!empty($proposal['treasurer_remarks'])): ?>
+                    <div class="remarks-text">
+                        <?php echo e($proposal['treasurer_remarks']); ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+            <div class="status-box">
+                <strong>President</strong>
+                <div class="status-value">
+                    <?php echo formatStatus($proposal['president_status'] ?? ''); ?>
+                </div>
+                <?php if (!empty($proposal['president_remarks'])): ?>
+                    <div class="remarks-text">
+                        <?php echo e($proposal['president_remarks']); ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+            <div class="status-box">
+                <strong>Adviser</strong>
+                <div class="status-value">
+                    <?php echo formatStatus($proposal['adviser_status'] ?? ''); ?>
+                </div>
+                <?php if (!empty($proposal['adviser_remarks'])): ?>
+                    <div class="remarks-text">
+                        <?php echo e($proposal['adviser_remarks']); ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+
+    <!-- SIGNATURE LINES (for printing) -->
+    <div class="signatures">
+        <div class="signature-block">
+            <div class="signature-line"></div>
+            <div class="signature-label">Secretary</div>
+        </div>
+        <div class="signature-block">
+            <div class="signature-line"></div>
+            <div class="signature-label">Treasurer</div>
+        </div>
+        <div class="signature-block">
+            <div class="signature-line"></div>
+            <div class="signature-label">Adviser</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Optional: auto-open print dialog when page loads
+    window.onload = function () {
+        window.print();
+    };
+</script>
 
 </body>
 </html>

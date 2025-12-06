@@ -8,3 +8,91 @@
 <footer style="text-align:center; padding:15px; color:#555;">
   &copy; 2025 PSITS Event Budget Monitoring System
 </footer>
+
+
+tree structure:
+
+psits_event_budget_monitoring/
+│   index.php
+│   logout.php
+│   validate_login.php
+│
+├───admin/
+│       extras
+│
+├───assets/
+│   ├───css/
+│   │       style-login.css
+│   │       style.css
+│   │
+│   ├───img/
+│   │       psits.png
+│   │
+│   └───js/
+│           app.js
+│           file-upload.js
+│
+├───config/
+│       db_connect.php
+│
+├───includes/
+│       auth.php
+│       footer.php
+│       functions.php
+│       header.php
+│       proposals_table.php
+│
+├───pages/
+│   ├───adviser/
+│   │       dashboard.php
+│   │       process_review.php
+│   │       review_proposal.php
+│   │       view_proposal.php
+│   │
+│   ├───pio/
+│   │       dashboard.php
+│   │       view_proposal.php
+│   │
+│   ├───president/
+│   │       dashboard.php
+│   │       process_review.php
+│   │       review_proposal.php
+│   │       view_proposal.php
+│   │
+│   ├───secretary/
+│   │       create_proposal.php
+│   │       dashboard.php
+│   │       edit_proposal.php
+│   │       my_proposals.php
+│   │       submit_proposal.php
+│   │       view_proposal.php
+│   │
+│   ├───shared/
+│   │       print_proposal.php
+│   │
+│   ├───student/
+│   │       announcements.php
+│   │       dashboard.php
+│   │       view_proposal.php
+│   │
+│   └───treasurer/
+│           dashboard.php
+│           pending_reviews.php
+│           process_review.php
+│           review_proposal.php
+│           view_proposal.php
+│
+└───uploads/
+        proposal_69337a8be8d295.23779121.png
+
+script for inserting users:
+
+INSERT INTO users (username, password, full_name, role_id) VALUES
+('christygrace@gmail.com', '827ccb0eea8a706c4c34a16891f84e7b', 'Christy Grace', 1),
+('keishasoler@gmail.com', '827ccb0eea8a706c4c34a16891f84e7b', 'Keisha Soler', 1),
+('glaizaasenero@gmail.com', '827ccb0eea8a706c4c34a16891f84e7b', 'Glaiza Asenero', 1),
+('vc@gmail.com', '827ccb0eea8a706c4c34a16891f84e7b', 'Vincent', 1),
+('js@gmail.com', '827ccb0eea8a706c4c34a16891f84e7b', 'Jenevive', 1),
+('ma@gmail.com', '827ccb0eea8a706c4c34a16891f84e7b', 'Marnell', 1),
+('de@gmail.com', '827ccb0eea8a706c4c34a16891f84e7b', 'Drexzel', 1);
+
