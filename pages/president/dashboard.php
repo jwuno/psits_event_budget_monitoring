@@ -1,128 +1,173 @@
 <?php
-// pages/president/dashboard.php
-
-session_start();
-
-// Only presidents can access
-if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'president') {
-    header("Location: /psits_event_budget_monitoring/index.php");
-    exit;
-}
+require_once '../../includes/auth.php';
+requireRole('president');
 
 require_once '../../config/db_connect.php';
-require_once '../../includes/functions.php';
-
-// ---------- STATS QUERIES ----------
-
-// Pending proposals waiting for the President's decision
-$pending_sql = "
-    SELECT COUNT(*) AS cnt 
-    FROM proposals 
-    WHERE status = 'pending' 
-      AND current_stage = 'president'
-";
-$pending_result = $conn->query($pending_sql);
-$pending_count = ($pending_result && $row = $pending_result->fetch_assoc()) ? (int)$row['cnt'] : 0;
-
-// Approved proposals (president_status = approved)
-$approved_sql = "
-    SELECT COUNT(*) AS cnt 
-    FROM proposals 
-    WHERE president_status = 'approved'
-";
-$approved_result = $conn->query($approved_sql);
-$approved_count = ($approved_result && $row = $approved_result->fetch_assoc()) ? (int)$row['cnt'] : 0;
-
-// Rejected proposals (president_status = rejected)
-$rejected_sql = "
-    SELECT COUNT(*) AS cnt 
-    FROM proposals 
-    WHERE president_status = 'rejected'
-";
-$rejected_result = $conn->query($rejected_sql);
-$rejected_count = ($rejected_result && $row = $rejected_result->fetch_assoc()) ? (int)$row['cnt'] : 0;
-
-// Total proposals (for overview)
-$total_sql = "SELECT COUNT(*) AS cnt FROM proposals";
-$total_result = $conn->query($total_sql);
-$total_count = ($total_result && $row = $total_result->fetch_assoc()) ? (int)$row['cnt'] : 0;
-
 include '../../includes/header.php';
+
+/* ---------- STATS ---------- */
+
+$pendingPres = 0;
+$res1 = mysqli_query(
+    $conn,
+    "SELECT COUNT(*) AS c
+     FROM proposals
+     WHERE status = 'pending'
+       AND current_stage = 'president'"
+);
+if ($res1 && $row1 = mysqli_fetch_assoc($res1)) {
+    $pendingPres = (int)$row1['c'];
+}
+
+$returnedToTreas = 0;
+$res2 = mysqli_query(
+    $conn,
+    "SELECT COUNT(*) AS c
+     FROM proposals
+     WHERE status = 'returned'
+       AND current_stage = 'treasurer'"
+);
+if ($res2 && $row2 = mysqli_fetch_assoc($res2)) {
+    $returnedToTreas = (int)$row2['c'];
+}
+
+$forwardedToAdviser = 0;
+$res3 = mysqli_query(
+    $conn,
+    "SELECT COUNT(*) AS c
+     FROM proposals
+     WHERE president_status = 'approved'"
+);
+if ($res3 && $row3 = mysqli_fetch_assoc($res3)) {
+    $forwardedToAdviser = (int)$row3['c'];
+}
+
+$totalApprovedBudget = 0;
+$res4 = mysqli_query(
+    $conn,
+    "SELECT SUM(proposed_budget) AS total
+     FROM proposals
+     WHERE status = 'approved'"
+);
+if ($res4 && $row4 = mysqli_fetch_assoc($res4)) {
+    $totalApprovedBudget = (float)$row4['total'];
+}
+
+/* ---------- TABLES ---------- */
+
+$forReview = mysqli_query(
+    $conn,
+    "SELECT id, title, event_date, venue, proposed_budget
+     FROM proposals
+     WHERE status = 'pending' AND current_stage = 'president'
+     ORDER BY date_submitted ASC"
+);
+
+$recent = mysqli_query(
+    $conn,
+    "SELECT id, title, event_date, proposed_budget, president_status, review_date
+     FROM proposals
+     WHERE president_status <> 'pending'
+     ORDER BY review_date DESC
+     LIMIT 8"
+);
 ?>
-
-<div class="dashboard-container">
-
-    <!-- Top welcome card (same style concept as Adviser) -->
-    <div class="card" style="margin-bottom: 25px;">
+<div class="dashboard">
+    <div class="dashboard-header">
         <h1>President Dashboard</h1>
-        <p>
-            Welcome, <strong><?php echo htmlspecialchars($_SESSION['full_name']); ?></strong>!
-            Here’s an overview of proposals awaiting your review and those you’ve already acted on.
-        </p>
+        <p>Review Treasurer-endorsed proposals and forward qualified events to the Adviser.</p>
     </div>
 
-    <!-- Stat cards row -->
-    <div class="stats-cards">
-
-        <!-- Pending for President -->
-        <div class="card stat-card">
-            <div class="stat-icon">
-                <i class="fas fa-hourglass-half"></i>
-            </div>
-            <div class="stat-info">
-                <h3><?php echo $pending_count; ?></h3>
-                <p>Pending Approval</p>
-                <a href="pending_proposals.php" class="btn btn-primary" style="margin-top:8px;">View Pending</a>
-            </div>
+    <div class="stats-grid">
+        <div class="stat-card pending">
+            <span class="stat-label">Pending for President Review</span>
+            <span class="stat-value"><?php echo $pendingPres; ?></span>
         </div>
-
-        <!-- Total proposals -->
-        <div class="card stat-card">
-            <div class="stat-icon">
-                <i class="fas fa-clipboard-list"></i>
-            </div>
-            <div class="stat-info">
-                <h3><?php echo $total_count; ?></h3>
-                <p>Total Proposals</p>
-                <a href="all_proposals.php" class="btn btn-secondary" style="margin-top:8px;">View All</a>
-            </div>
+        <div class="stat-card">
+            <span class="stat-label">Returned to Treasurer</span>
+            <span class="stat-value"><?php echo $returnedToTreas; ?></span>
         </div>
-
-        <!-- Approved by President -->
-        <div class="card stat-card">
-            <div class="stat-icon">
-                <i class="fas fa-check-circle"></i>
-            </div>
-            <div class="stat-info">
-                <h3><?php echo $approved_count; ?></h3>
-                <p>Approved Proposals</p>
-                <a href="approved_proposals.php" class="btn btn-primary" style="margin-top:8px;">View Approved</a>
-            </div>
+        <div class="stat-card approved">
+            <span class="stat-label">Forwarded to Adviser</span>
+            <span class="stat-value"><?php echo $forwardedToAdviser; ?></span>
         </div>
-
-        <!-- Rejected by President -->
-        <div class="card stat-card">
-            <div class="stat-icon">
-                <i class="fas fa-times-circle"></i>
-            </div>
-            <div class="stat-info">
-                <h3><?php echo $rejected_count; ?></h3>
-                <p>Rejected Proposals</p>
-                <a href="rejected_proposals.php" class="btn btn-danger" style="margin-top:8px;">View Rejected</a>
-            </div>
+        <div class="stat-card budget">
+            <span class="stat-label">Total Final Approved Budget</span>
+            <span class="stat-value">₱<?php echo number_format($totalApprovedBudget, 2); ?></span>
         </div>
-
     </div>
 
-    <!-- Optional: small helper text like Adviser page -->
-    <div class="card" style="margin-top: 25px;">
-        <h2>Proposals Awaiting Your Decision</h2>
-        <p class="card-desc">
-            These proposals have already passed the Treasurer and are now routed to your office
-            for organizational approval. Use the <strong>Pending Approval</strong> card above to review them.
-        </p>
-    </div>
+    <div class="charts-grid">
+        <div class="card">
+            <h2>Proposals Awaiting Your Review</h2>
+            <div class="table-wrapper">
+                <table class="proposals-table">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Event Date</th>
+                            <th>Venue</th>
+                            <th>Budget</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php if ($forReview && mysqli_num_rows($forReview) > 0): ?>
+                        <?php while ($p = mysqli_fetch_assoc($forReview)): ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($p['title']); ?></td>
+                                <td><?php echo htmlspecialchars($p['event_date']); ?></td>
+                                <td><?php echo htmlspecialchars($p['venue']); ?></td>
+                                <td>₱<?php echo number_format($p['proposed_budget'], 2); ?></td>
+                                <td>
+                                    <a href="review_proposal.php?id=<?php echo (int)$p['id']; ?>" class="btn btn-sm btn-primary">
+                                        Review
+                                    </a>
+                                </td>
+                            </tr>
+                        <?php endwhile; ?>
+                    <?php else: ?>
+                        <tr>
+                            <td colspan="5" class="empty-state">No proposals waiting for President right now.</td>
+                        </tr>
+                    <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
+        <div class="card">
+            <h2>Recently Processed by President</h2>
+            <div class="table-wrapper">
+                <table class="proposals-table">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Event Date</th>
+                            <th>Budget</th>
+                            <th>President Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php if ($recent && mysqli_num_rows($recent) > 0): ?>
+                        <?php while ($p = mysqli_fetch_assoc($recent)): ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($p['title']); ?></td>
+                                <td><?php echo htmlspecialchars($p['event_date']); ?></td>
+                                <td>₱<?php echo number_format($p['proposed_budget'], 2); ?></td>
+                                <td><?php echo ucfirst(htmlspecialchars($p['president_status'])); ?></td>
+                            </tr>
+                        <?php endwhile; ?>
+                    <?php else: ?>
+                        <tr>
+                            <td colspan="4" class="empty-state">No recent actions yet.</td>
+                        </tr>
+                    <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
 
 <?php include '../../includes/footer.php'; ?>

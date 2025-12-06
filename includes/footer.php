@@ -1,16 +1,17 @@
-<footer style="text-align:center; padding:15px; color:#555;">
-  &copy; 2025 PSITS Event Budget Monitoring System
-</footer>
+<?php
+// includes/footer.php
+$base = '/psits_event_budget_monitoring/';
+?>
+    </main>
 
-<script>
-const profileIcon = document.getElementById('profileIcon');
-const dropdownMenu = document.getElementById('dropdownMenu');
-profileIcon.addEventListener('click', () => dropdownMenu.classList.toggle('show'));
-window.addEventListener('click', e => {
-  if (!profileIcon.contains(e.target) && !dropdownMenu.contains(e.target)) {
-    dropdownMenu.classList.remove('show');
-  }
-});
-</script>
+    <footer class="main-footer">
+        <p>&copy; <?php echo date('Y'); ?> PSITS Pagadian Annex</p>
+    </footer>
+
+    <!-- Main JS for dropdowns etc. (if you have one) -->
+    <script src="<?php echo $base; ?>assets/js/script.js"></script>
+
+    <!-- Chart.js + student charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </body>
 </html>

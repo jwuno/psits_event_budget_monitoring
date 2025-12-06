@@ -1,7 +1,6 @@
 <?php
 require_once '../../includes/auth.php';
-requireRole('secretary'); // 👈 IMPORTANT: must be 'secretary', not 'student' or anything else
-
+requireRole('student');
 require_once '../../config/db_connect.php';
 include '../../includes/header.php';
 
@@ -11,15 +10,16 @@ if ($id <= 0) {
     exit;
 }
 
-$sql = "SELECT * FROM proposals WHERE id = $id";
+// Students should only see APPROVED proposals
+$sql = "SELECT * FROM proposals WHERE id = $id AND status = 'approved'";
 $res = mysqli_query($conn, $sql);
 
 if (!$res || mysqli_num_rows($res) === 0) {
     ?>
     <div class="dashboard">
         <div class="card">
-            <h2>Proposal Not Found</h2>
-            <p>The requested proposal does not exist.</p>
+            <h2>Proposal Not Available</h2>
+            <p>This proposal is either not approved yet or does not exist.</p>
             <button type="button" class="btn btn-sm btn-primary" onclick="window.history.back();">
                 <i class="fa-solid fa-arrow-left"></i> Back
             </button>
@@ -31,63 +31,40 @@ if (!$res || mysqli_num_rows($res) === 0) {
 }
 
 $proposal = mysqli_fetch_assoc($res);
-$currentUser = $_SESSION['username'] ?? '';
-$canEdit = in_array($proposal['status'], ['pending', 'returned']) && $proposal['created_by'] === $currentUser;
 ?>
 
 <div class="dashboard">
     <div class="dashboard-header" style="display:flex;justify-content:space-between;align-items:center;gap:1rem;">
         <div>
             <h1><?php echo htmlspecialchars($proposal['title']); ?></h1>
-            <p>Event proposal details and approval status.</p>
+            <p>Approved event details and budget for PSITS transparency.</p>
         </div>
 
-        <div style="display:flex;gap:0.5rem;">
-            <?php if ($canEdit): ?>
-                <a href="edit_proposal.php?id=<?php echo (int)$proposal['id']; ?>" class="btn btn-sm btn-primary">
-                    <i class="fa-solid fa-pen"></i> Edit
-                </a>
-            <?php endif; ?>
-            <button type="button" class="btn btn-sm" onclick="window.history.back();">
-                <i class="fa-solid fa-arrow-left"></i> Back
-            </button>
-        </div>
+        <button type="button" class="btn btn-sm" onclick="window.history.back();">
+            <i class="fa-solid fa-arrow-left"></i> Back
+        </button>
     </div>
 
-    <!-- Status cards -->
+    <!-- High-level summary -->
     <div class="card">
         <div class="stats-grid" style="margin-top:0;">
-            <div class="stat-card">
-                <span class="stat-label">Overall Status</span>
+            <div class="stat-card approved">
+                <span class="stat-label">Final Status</span>
                 <span class="stat-value">
                     <?php echo ucfirst(htmlspecialchars($proposal['status'])); ?>
                 </span>
             </div>
-            <div class="stat-card">
-                <span class="stat-label">Current Stage</span>
+            <div class="stat-card budget">
+                <span class="stat-label">Approved Budget</span>
                 <span class="stat-value">
-                    <?php echo ucfirst(htmlspecialchars($proposal['current_stage'])); ?>
-                </span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-label">Treasurer</span>
-                <span class="stat-value">
-                    <?php echo ucfirst(htmlspecialchars($proposal['treasurer_status'])); ?>
-                </span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-label">President</span>
-                <span class="stat-value">
-                    <?php echo ucfirst(htmlspecialchars($proposal['president_status'])); ?>
-                </span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-label">Adviser</span>
-                <span class="stat-value">
-                    <?php echo ucfirst(htmlspecialchars($proposal['adviser_status'])); ?>
+                    ₱<?php echo number_format($proposal['proposed_budget'], 2); ?>
                 </span>
             </div>
         </div>
+        <p style="margin-top:0.75rem;color:#6b7280;font-size:0.9rem;">
+            This event has completed the internal review of the Treasurer, President, and Adviser
+            and is formally approved under PSITS Pagadian Annex.
+        </p>
     </div>
 
     <!-- Event info -->
@@ -113,20 +90,16 @@ $canEdit = in_array($proposal['status'], ['pending', 'returned']) && $proposal['
                         <td><?php echo htmlspecialchars($proposal['expected_participants']); ?></td>
                     </tr>
                     <tr>
-                        <th>Proposed Budget</th>
+                        <th>Approved Budget</th>
                         <td>₱<?php echo number_format($proposal['proposed_budget'], 2); ?></td>
                     </tr>
                     <tr>
-                        <th>Submitted By</th>
+                        <th>Prepared By</th>
                         <td><?php echo htmlspecialchars($proposal['created_by']); ?></td>
                     </tr>
                     <tr>
                         <th>Date Submitted</th>
                         <td><?php echo htmlspecialchars($proposal['date_submitted']); ?></td>
-                    </tr>
-                    <tr>
-                        <th>Returned From</th>
-                        <td><?php echo $proposal['returned_from'] ? htmlspecialchars($proposal['returned_from']) : '—'; ?></td>
                     </tr>
                 </tbody>
             </table>
@@ -137,7 +110,7 @@ $canEdit = in_array($proposal['status'], ['pending', 'returned']) && $proposal['
     <div class="card">
         <h2>Proposal Details</h2>
 
-        <h3 style="font-size:0.95rem;margin-top:0.2rem;">Description / Rationale</h3>
+        <h3 style="font-size:0.95rem;margin-top:0.2rem;">Event Description / Rationale</h3>
         <p style="white-space:pre-wrap;margin-top:0.25rem;">
             <?php
             echo ($proposal['description'] !== null && $proposal['description'] !== '')
@@ -165,47 +138,6 @@ $canEdit = in_array($proposal['status'], ['pending', 'returned']) && $proposal['
                 </a>
             </p>
         <?php endif; ?>
-    </div>
-
-    <!-- Remarks -->
-    <div class="card">
-        <h2>Remarks</h2>
-        <div class="table-wrapper">
-            <table class="proposals-table">
-                <tbody>
-                    <tr>
-                        <th style="width:220px;">Treasurer Remarks</th>
-                        <td>
-                            <?php
-                            echo ($proposal['treasurer_remarks'] !== null && $proposal['treasurer_remarks'] !== '')
-                                ? nl2br(htmlspecialchars($proposal['treasurer_remarks']))
-                                : 'None.';
-                            ?>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th>President Remarks</th>
-                        <td>
-                            <?php
-                            echo ($proposal['president_remarks'] !== null && $proposal['president_remarks'] !== '')
-                                ? nl2br(htmlspecialchars($proposal['president_remarks']))
-                                : 'None.';
-                            ?>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th>Adviser Remarks</th>
-                        <td>
-                            <?php
-                            echo ($proposal['adviser_remarks'] !== null && $proposal['adviser_remarks'] !== '')
-                                ? nl2br(htmlspecialchars($proposal['adviser_remarks']))
-                                : 'None.';
-                            ?>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
     </div>
 </div>
 

@@ -1,69 +1,26 @@
 <?php
-include('../../includes/header.php');
-if ($_SESSION['role'] != 'secretary') {
+session_start();
+
+if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'secretary') {
     $_SESSION['error'] = "Access denied!";
     header("Location: ../../index.php");
     exit;
 }
-include('../../includes/db.php');
 
-// Get proposals created by this secretary
-$query = "SELECT * FROM proposals WHERE created_by = '".$_SESSION['full_name']."' ORDER BY date_submitted DESC";
-$result = mysqli_query($conn, $query);
+require_once '../../config/db_connect.php';
+include '../../includes/header.php';
 ?>
 
 <div class="dashboard-container">
-    <div class="page-header">
-        <h1>My Proposals</h1>
-        <p>All proposals I have submitted</p>
+  <div class="dashboard-header">
+    <div class="header-content">
+      <h1>My Submitted Proposals</h1>
+      <p>Proposals you’ve created and submitted for review.</p>
     </div>
-
-    <?php if(mysqli_num_rows($result) > 0): ?>
-    <div class="table-container">
-        <table class="submissions-table">
-            <thead>
-                <tr>
-                    <th>Proposal Title</th>
-                    <th>Date Submitted</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php while($proposal = mysqli_fetch_assoc($result)): ?>
-                <tr>
-                    <td class="proposal-title"><?php echo htmlspecialchars($proposal['title']); ?></td>
-                    <td><?php echo date('M j, Y g:i A', strtotime($proposal['date_submitted'])); ?></td>
-                    <td>
-                        <span class="status-badge <?php echo strtolower($proposal['status']); ?>">
-                            <?php echo $proposal['status']; ?>
-                        </span>
-                    </td>
-                    <td>
-                        <a href="view_proposal.php?id=<?php echo $row['id']; ?>" class="btn btn-view">
-                            View
-                        </a>
-
-                    </td>
-                </tr>
-                <?php endwhile; ?>
-            </tbody>
-        </table>
+    <div class="header-actions">
+      <a href="dashboard.php" class="btn-back">← Back to Dashboard</a>
     </div>
-    <?php else: ?>
-    <div class="empty-state">
-        <i class="fas fa-inbox"></i>
-        <h3>No Proposals Yet</h3>
-        <p>You haven't submitted any proposals yet.</p>
-        <a href="create_proposal.php" class="btn">Create Your First Proposal</a>
-    </div>
-    <?php endif; ?>
-
-    <div class="navigation-actions">
-        <a href="dashboard.php" class="btn btn-back">
-            <i class="fas fa-arrow-left"></i> Back to Dashboard
-        </a>
-    </div>
+  </div>
+  <?php include '../../includes/proposals_table.php'; ?>
 </div>
-
-<?php include('../../includes/footer.php'); ?>
+<?php include '../../includes/footer.php'; ?>

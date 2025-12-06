@@ -1,259 +1,272 @@
 <?php
-// ===== ACCESS CONTROL & SETUP (NO OUTPUT YET) =====
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+require_once '../../includes/auth.php';
+requireRole('adviser');
 
-if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'adviser') {
-    $_SESSION['error'] = "Access denied!";
-    header("Location: ../../index.php");
+require_once '../../config/db_connect.php';
+include '../../includes/header.php';
+
+$id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+if ($id <= 0) {
+    header('Location: dashboard.php');
     exit;
 }
 
-include('../../config/db_connect.php');
+// Fetch proposal
+$sql = "SELECT * FROM proposals WHERE id = $id";
+$res = mysqli_query($conn, $sql);
 
-// Get proposal ID
-$proposal_id = isset($_GET['id']) ? mysqli_real_escape_string($conn, $_GET['id']) : null;
-
-if (!$proposal_id) {
-    $_SESSION['error'] = "No proposal specified!";
-    header("Location: pending_proposals.php");
+if (!$res || mysqli_num_rows($res) === 0) {
+    ?>
+    <div class="dashboard">
+        <div class="card">
+            <h2>Proposal Not Found</h2>
+            <p>The requested proposal does not exist.</p>
+            <button type="button" class="btn btn-sm btn-primary" onclick="window.history.back();">
+                <i class="fa-solid fa-arrow-left"></i> Back
+            </button>
+        </div>
+    </div>
+    <?php
+    include '../../includes/footer.php';
     exit;
 }
 
-// ===== HANDLE FORM SUBMISSION (FINAL APPROVE / REJECT) =====
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
-    $action           = $_POST['action'];
-    $adviser_remarks  = mysqli_real_escape_string($conn, $_POST['adviser_remarks']);
+$proposal = mysqli_fetch_assoc($res);
 
-    if ($action === 'approve') {
+/* ---------- Handle POST (Final Approve / Final Reject) ---------- */
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $remarks = mysqli_real_escape_string($conn, $_POST['adviser_remarks'] ?? '');
+    $now     = date('Y-m-d H:i:s');
+    $user    = mysqli_real_escape_string($conn, $_SESSION['username'] ?? 'adviser');
+
+    if (isset($_POST['action_approve'])) {
         // FINAL APPROVAL
-        $sql = "UPDATE proposals SET
-                    status                = 'approved',
-                    current_stage         = 'final',
+        $status         = 'approved';
+        $current_stage  = 'final';
+        $adviser_status = 'approved';
 
-                    adviser_status        = 'approved',
-                    adviser_remarks       = '$adviser_remarks',
-                    adviser_reviewed_at   = NOW(),
-                    adviser_review_date   = NOW(),
-                    adviser_reviewed_by   = '{$_SESSION['full_name']}',
+        $update = "
+            UPDATE proposals
+            SET
+                adviser_status   = '$adviser_status',
+                adviser_remarks  = '$remarks',
+                status           = '$status',
+                current_stage    = '$current_stage',
+                returned_from    = NULL,
+                reviewed_by      = '$user',
+                review_date      = '$now'
+            WHERE id = $id
+        ";
 
-                    reviewed_by           = '{$_SESSION['full_name']}',
-                    review_date           = NOW()
-                WHERE id = '$proposal_id'";
-        
-        if (mysqli_query($conn, $sql)) {
-            $_SESSION['success'] = "Proposal APPROVED. Status is now FINAL.";
+        if (mysqli_query($conn, $update)) {
+            $_SESSION['success'] = 'Proposal has been finally approved.';
+            header('Location: dashboard.php');
+            exit;
         } else {
-            $_SESSION['error'] = "Error updating proposal: " . mysqli_error($conn);
+            $_SESSION['error'] = 'Error updating proposal: ' . mysqli_error($conn);
         }
 
-        header("Location: pending_proposals.php");
-        exit;
+    } elseif (isset($_POST['action_reject'])) {
+        // FINAL REJECTION
+        $status         = 'rejected';
+        $current_stage  = 'final';
+        $adviser_status = 'rejected';
 
-    } elseif ($action === 'reject') {
-        // FINAL REJECTION (only adviser can fully reject)
-        $sql = "UPDATE proposals SET
-                    status                = 'rejected',
-                    current_stage         = 'final',
+        $update = "
+            UPDATE proposals
+            SET
+                adviser_status   = '$adviser_status',
+                adviser_remarks  = '$remarks',
+                status           = '$status',
+                current_stage    = '$current_stage',
+                returned_from    = NULL,
+                reviewed_by      = '$user',
+                review_date      = '$now'
+            WHERE id = $id
+        ";
 
-                    adviser_status        = 'rejected',
-                    adviser_remarks       = '$adviser_remarks',
-                    adviser_reviewed_at   = NOW(),
-                    adviser_review_date   = NOW(),
-                    adviser_reviewed_by   = '{$_SESSION['full_name']}',
-
-                    rejection_reason      = '$adviser_remarks',
-                    reviewed_by           = '{$_SESSION['full_name']}',
-                    review_date           = NOW()
-                WHERE id = '$proposal_id'";
-
-        if (mysqli_query($conn, $sql)) {
-            $_SESSION['success'] = "Proposal REJECTED. Status is now FINAL.";
+        if (mysqli_query($conn, $update)) {
+            $_SESSION['success'] = 'Proposal has been finally rejected.';
+            header('Location: dashboard.php');
+            exit;
         } else {
-            $_SESSION['error'] = "Error updating proposal: " . mysqli_error($conn);
+            $_SESSION['error'] = 'Error updating proposal: ' . mysqli_error($conn);
         }
-
-        header("Location: pending_proposals.php");
-        exit;
     }
+
+    // If there was an error, reload latest data
+    $res = mysqli_query($conn, "SELECT * FROM proposals WHERE id = $id");
+    $proposal = mysqli_fetch_assoc($res);
 }
-
-// ===== FETCH PROPOSAL FOR DISPLAY =====
-$proposal_sql    = "SELECT * FROM proposals WHERE id = '$proposal_id'";
-$proposal_result = mysqli_query($conn, $proposal_sql);
-$proposal        = mysqli_fetch_assoc($proposal_result);
-
-if (!$proposal) {
-    $_SESSION['error'] = "Proposal not found!";
-    header("Location: pending_proposals.php");
-    exit;
-}
-
-// Safe to output HTML now
-include('../../includes/header.php');
 ?>
 
-<div class="dashboard-container">
-    <div class="dashboard-header">
-        <div class="header-content">
-            <h1>Final Review</h1>
-            <p>Adviser’s final decision on the proposal.</p>
+<div class="dashboard">
+    <div class="dashboard-header" style="display:flex;justify-content:space-between;align-items:center;gap:1rem;">
+        <div>
+            <h1>Adviser Review</h1>
+            <p>Make the final decision for this PSITS event proposal.</p>
         </div>
-        <div class="header-actions">
-            <a href="pending_proposals.php" class="btn-back">← Back to Pending Proposals</a>
+
+        <button type="button" class="btn btn-sm" onclick="window.history.back();">
+            <i class="fa-solid fa-arrow-left"></i> Back
+        </button>
+    </div>
+
+    <!-- Status cards -->
+    <div class="card">
+        <div class="stats-grid" style="margin-top:0;">
+            <div class="stat-card">
+                <span class="stat-label">Overall Status</span>
+                <span class="stat-value">
+                    <?php echo ucfirst(htmlspecialchars($proposal['status'])); ?>
+                </span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Current Stage</span>
+                <span class="stat-value">
+                    <?php echo ucfirst(htmlspecialchars($proposal['current_stage'])); ?>
+                </span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Treasurer Status</span>
+                <span class="stat-value">
+                    <?php echo ucfirst(htmlspecialchars($proposal['treasurer_status'])); ?>
+                </span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">President Status</span>
+                <span class="stat-value">
+                    <?php echo ucfirst(htmlspecialchars($proposal['president_status'])); ?>
+                </span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Adviser Status</span>
+                <span class="stat-value">
+                    <?php echo ucfirst(htmlspecialchars($proposal['adviser_status'])); ?>
+                </span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Proposed Budget</span>
+                <span class="stat-value">
+                    ₱<?php echo number_format($proposal['proposed_budget'], 2); ?>
+                </span>
+            </div>
         </div>
     </div>
 
-    <?php if (isset($_SESSION['success'])): ?>
-        <div class="alert alert-success"><?php echo $_SESSION['success']; unset($_SESSION['success']); ?></div>
-    <?php endif; ?>
-    <?php if (isset($_SESSION['error'])): ?>
-        <div class="alert alert-error"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
-    <?php endif; ?>
-
-    <div class="proposal-detail">
-        <div class="proposal-card">
-            <div class="proposal-header">
-                <h3><?php echo htmlspecialchars($proposal['title']); ?></h3>
-                <span class="status-badge status-<?php echo strtolower($proposal['status']); ?>">
-                    <?php echo ucfirst($proposal['status']); ?>
-                </span>
-            </div>
-
-            <div class="proposal-details">
-                <div class="detail-item">
-                    <strong>Participants:</strong>
-                    <span><?php echo $proposal['expected_participants']; ?> students</span>
-                </div>
-                <div class="detail-item">
-                    <strong>Created by:</strong>
-                    <span><?php echo htmlspecialchars($proposal['created_by']); ?></span>
-                </div>
-                <div class="detail-item">
-                    <strong>Event Date:</strong>
-                    <span><?php echo date('M j, Y', strtotime($proposal['event_date'])); ?></span>
-                </div>
-                <div class="detail-item">
-                    <strong>Venue:</strong>
-                    <span><?php echo htmlspecialchars($proposal['venue']); ?></span>
-                </div>
-                <div class="detail-item">
-                    <strong>Final Budget:</strong>
-                    <span class="budget-amount">₱<?php echo number_format($proposal['proposed_budget'], 2); ?></span>
-                </div>
-            </div>
-
-            <?php if (!empty($proposal['budget_breakdown'])): ?>
-                <div class="detail-section">
-                    <h3>Budget Breakdown</h3>
-                    <p><?php echo nl2br(htmlspecialchars($proposal['budget_breakdown'])); ?></p>
-                </div>
-            <?php endif; ?>
-
-            <?php if (!empty($proposal['objectives'])): ?>
-                <div class="detail-section">
-                    <h3>Objectives</h3>
-                    <p><?php echo nl2br(htmlspecialchars($proposal['objectives'])); ?></p>
-                </div>
-            <?php endif; ?>
-
-            <?php if (!empty($proposal['activities'])): ?>
-                <div class="detail-section">
-                    <h3>Activities</h3>
-                    <p><?php echo nl2br(htmlspecialchars($proposal['activities'])); ?></p>
-                </div>
-            <?php endif; ?>
-
-            <?php if (!empty($proposal['expected_outcomes'])): ?>
-                <div class="detail-section">
-                    <h3>Expected Outcomes</h3>
-                    <p><?php echo nl2br(htmlspecialchars($proposal['expected_outcomes'])); ?></p>
-                </div>
-            <?php endif; ?>
-
-            <?php if (!empty($proposal['description'])): ?>
-                <div class="detail-section">
-                    <h3>Description</h3>
-                    <p><?php echo nl2br(htmlspecialchars($proposal['description'])); ?></p>
-                </div>
-            <?php endif; ?>
-
-            <?php if (!empty($proposal['attachment_path'])): ?>
-                <div class="detail-section">
-                    <h3>Attachment</h3>
-                    <a href="../../uploads/<?php echo htmlspecialchars($proposal['attachment_path']); ?>"
-                       class="btn-download" target="_blank">
-                        View Attachment
-                    </a>
-                </div>
-            <?php endif; ?>
+    <!-- Event info -->
+    <div class="card">
+        <h2>Event Information</h2>
+        <div class="table-wrapper">
+            <table class="proposals-table">
+                <tbody>
+                    <tr>
+                        <th style="width:220px;">Event Title</th>
+                        <td><?php echo htmlspecialchars($proposal['title']); ?></td>
+                    </tr>
+                    <tr>
+                        <th>Event Date</th>
+                        <td><?php echo htmlspecialchars($proposal['event_date']); ?></td>
+                    </tr>
+                    <tr>
+                        <th>Venue</th>
+                        <td><?php echo htmlspecialchars($proposal['venue']); ?></td>
+                    </tr>
+                    <tr>
+                        <th>Expected Participants</th>
+                        <td><?php echo htmlspecialchars($proposal['expected_participants']); ?></td>
+                    </tr>
+                    <tr>
+                        <th>Prepared By</th>
+                        <td><?php echo htmlspecialchars($proposal['created_by']); ?></td>
+                    </tr>
+                    <tr>
+                        <th>Date Submitted</th>
+                        <td><?php echo htmlspecialchars($proposal['date_submitted']); ?></td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
+    </div>
 
-        <?php if ($proposal['status'] === 'pending' && $proposal['current_stage'] === 'adviser'): ?>
-            <!-- Final decision form -->
-            <div class="action-card">
-                <h3>Adviser’s Final Decision</h3>
+    <!-- Budget + attachment -->
+    <div class="card">
+        <h2>Budget & Attachments</h2>
 
-                <!-- Final Approve -->
-                <form method="POST" action="" class="action-form">
-                    <input type="hidden" name="action" value="approve">
+        <h3 style="font-size:0.95rem;margin-top:0.2rem;">Budget Breakdown</h3>
+        <p style="white-space:pre-wrap;margin-top:0.25rem;">
+            <?php
+            echo ($proposal['budget_breakdown'] !== null && $proposal['budget_breakdown'] !== '')
+                ? htmlspecialchars($proposal['budget_breakdown'])
+                : 'No budget breakdown provided.';
+            ?>
+        </p>
 
-                    <div class="form-group">
-                        <label for="adviser_remarks_approve">Remarks (optional):</label>
-                        <textarea id="adviser_remarks_approve" name="adviser_remarks"
-                                  placeholder="Optional comments for the final approval..."><?php
-                                  echo htmlspecialchars($proposal['adviser_remarks'] ?? ''); ?></textarea>
-                    </div>
-
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-approve-large"
-                                onclick="return confirm('Approve this proposal as FINAL?');">
-                            Approve (Final)
-                        </button>
-                    </div>
-                </form>
-
-                <!-- Final Reject -->
-                <form method="POST" action="" class="reject-form">
-                    <input type="hidden" name="action" value="reject">
-
-                    <div class="form-group">
-                        <label for="adviser_remarks_reject">Reason for Rejection:</label>
-                        <textarea id="adviser_remarks_reject" name="adviser_remarks"
-                                  placeholder="Explain why this proposal is being rejected..."
-                                  required rows="4"><?php
-                                  echo htmlspecialchars($proposal['adviser_remarks'] ?? ''); ?></textarea>
-                    </div>
-
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-reject-large"
-                                onclick="return confirm('Reject this proposal as FINAL? This cannot be undone.');">
-                            Reject (Final)
-                        </button>
-                    </div>
-                </form>
-            </div>
-        <?php else: ?>
-            <!-- Read-only -->
-            <div class="detail-card">
-                <h3>Final Decision Summary</h3>
-                <p><strong>Status:</strong> <?php echo ucfirst($proposal['status']); ?></p>
-                <?php if (!empty($proposal['adviser_remarks'])): ?>
-                    <p><strong>Adviser Remarks:</strong>
-                        <?php echo nl2br(htmlspecialchars($proposal['adviser_remarks'])); ?></p>
-                <?php endif; ?>
-                <?php if (!empty($proposal['adviser_reviewed_by'])): ?>
-                    <p><strong>Reviewed by:</strong>
-                        <?php echo htmlspecialchars($proposal['adviser_reviewed_by']); ?></p>
-                <?php endif; ?>
-                <?php if (!empty($proposal['adviser_review_date'])): ?>
-                    <p><strong>Review Date:</strong>
-                        <?php echo date('M j, Y g:i A', strtotime($proposal['adviser_review_date'])); ?></p>
-                <?php endif; ?>
-            </div>
+        <?php if (!empty($proposal['attachment_path'])): ?>
+            <h3 style="font-size:0.95rem;margin-top:1rem;">Attachment</h3>
+            <p style="margin-top:0.25rem;">
+                <a class="btn btn-sm btn-primary"
+                   href="<?php echo '../../' . htmlspecialchars($proposal['attachment_path']); ?>"
+                   target="_blank">
+                    <i class="fa-solid fa-file-arrow-down"></i> View / Download Attachment
+                </a>
+            </p>
         <?php endif; ?>
+    </div>
+
+    <!-- Previous remarks -->
+    <div class="card">
+        <h2>Previous Remarks</h2>
+        <div class="table-wrapper">
+            <table class="proposals-table">
+                <tbody>
+                    <tr>
+                        <th style="width:220px;">Treasurer Remarks</th>
+                        <td>
+                            <?php
+                            echo ($proposal['treasurer_remarks'] !== null && $proposal['treasurer_remarks'] !== '')
+                                ? nl2br(htmlspecialchars($proposal['treasurer_remarks']))
+                                : 'None.';
+                            ?>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>President Remarks</th>
+                        <td>
+                            <?php
+                            echo ($proposal['president_remarks'] !== null && $proposal['president_remarks'] !== '')
+                                ? nl2br(htmlspecialchars($proposal['president_remarks']))
+                                : 'None.';
+                            ?>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Adviser decision form -->
+    <div class="card">
+        <h2>Your Final Decision</h2>
+        <form action="review_proposal.php?id=<?php echo $id; ?>" method="post">
+            <div class="form-group">
+                <label for="adviser_remarks">Adviser Remarks / Justification</label>
+                <textarea id="adviser_remarks" name="adviser_remarks" rows="4"
+                          placeholder="State your reason for final approval or rejection."><?php
+                    echo htmlspecialchars($proposal['adviser_remarks']);
+                ?></textarea>
+            </div>
+
+            <div style="margin-top:1rem;display:flex;justify-content:flex-end;gap:0.5rem;flex-wrap:wrap;">
+                <button type="submit" name="action_reject" class="btn btn-sm">
+                    <i class="fa-solid fa-xmark"></i> Final Reject
+                </button>
+                <button type="submit" name="action_approve" class="btn btn-sm btn-primary">
+                    <i class="fa-solid fa-check"></i> Final Approve
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 
-<?php include('../../includes/footer.php'); ?>
+<?php include '../../includes/footer.php'; ?>

@@ -1,264 +1,172 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
-if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'adviser') {
-    header("Location: ../../index.php");
-    exit;
-}
+require_once '../../includes/auth.php';
+requireRole('adviser');
 
 require_once '../../config/db_connect.php';
-require_once '../../includes/functions.php';
+include '../../includes/header.php';
 
-// ================== HANDLE FINAL APPROVE / REJECT ==================
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['proposal_id'], $_POST['action'])) {
-    $proposal_id     = (int) $_POST['proposal_id'];
-    $action          = $_POST['action'];
-    $adviser_remarks = mysqli_real_escape_string($conn, $_POST['remarks'] ?? '');
+/* ---------- STATS ---------- */
 
-    if ($proposal_id > 0 && in_array($action, ['approve', 'reject'], true)) {
-
-        if ($action === 'approve') {
-            $sql = "UPDATE proposals SET
-                        status              = 'approved',
-                        current_stage       = 'final',
-                        adviser_status      = 'approved',
-                        adviser_remarks     = '$adviser_remarks',
-                        adviser_reviewed_at = NOW(),
-                        adviser_review_date = NOW(),
-                        adviser_reviewed_by = '{$_SESSION['full_name']}',
-                        reviewed_by         = '{$_SESSION['full_name']}',
-                        review_date         = NOW()
-                    WHERE id = $proposal_id AND current_stage = 'adviser'";
-            $success_msg = "Proposal approved successfully!";
-        } else {
-            $sql = "UPDATE proposals SET
-                        status              = 'rejected',
-                        current_stage       = 'final',
-                        adviser_status      = 'rejected',
-                        adviser_remarks     = '$adviser_remarks',
-                        adviser_reviewed_at = NOW(),
-                        adviser_review_date = NOW(),
-                        adviser_reviewed_by = '{$_SESSION['full_name']}',
-                        rejection_reason    = '$adviser_remarks',
-                        reviewed_by         = '{$_SESSION['full_name']}',
-                        review_date         = NOW()
-                    WHERE id = $proposal_id AND current_stage = 'adviser'";
-            $success_msg = "Proposal rejected successfully!";
-        }
-
-        if (mysqli_query($conn, $sql)) {
-            // Notifications for officers
-            $info_res = mysqli_query($conn, "SELECT title, created_by FROM proposals WHERE id = $proposal_id");
-            $info     = mysqli_fetch_assoc($info_res);
-            $ptitle   = $info['title'] ?? 'an event';
-
-            if ($action === 'approve') {
-                $notif_message = "Proposal \"$ptitle\" has been APPROVED by the Adviser.";
-            } else {
-                $notif_message = "Proposal \"$ptitle\" has been REJECTED by the Adviser.";
-            }
-
-            addNotification($conn, 'secretary', $notif_message, $_SESSION['full_name']);
-            addNotification($conn, 'treasurer', $notif_message, $_SESSION['full_name']);
-            addNotification($conn, 'president', $notif_message, $_SESSION['full_name']);
-
-            $_SESSION['success'] = $success_msg;
-        } else {
-            $_SESSION['error'] = "Error updating proposal: " . mysqli_error($conn);
-        }
-    } else {
-        $_SESSION['error'] = "Invalid request.";
-    }
-
-    header("Location: dashboard.php");
-    exit;
+$pendingFinal = 0;
+$res1 = mysqli_query(
+    $conn,
+    "SELECT COUNT(*) AS c
+     FROM proposals
+     WHERE status = 'pending'
+       AND current_stage = 'adviser'"
+);
+if ($res1 && $row1 = mysqli_fetch_assoc($res1)) {
+    $pendingFinal = (int)$row1['c'];
 }
 
-// ================== FETCH DASHBOARD DATA ==================
+$finalApproved = 0;
+$finalRejected = 0;
 
-// Summary counts
-$counts_sql = "
-    SELECT
-        COUNT(*) AS total_proposals,
-        SUM(CASE WHEN status = 'pending' AND current_stage = 'adviser' THEN 1 ELSE 0 END) AS pending_adviser,
-        SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) AS approved,
-        SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END) AS rejected
-    FROM proposals
-";
-$counts_res = mysqli_query($conn, $counts_sql);
-$counts     = mysqli_fetch_assoc($counts_res);
+$res2 = mysqli_query(
+    $conn,
+    "SELECT adviser_status, COUNT(*) AS c
+     FROM proposals
+     WHERE current_stage = 'final'
+     GROUP BY adviser_status"
+);
+if ($res2) {
+    while ($row2 = mysqli_fetch_assoc($res2)) {
+        $s = strtolower($row2['adviser_status']);
+        if ($s === 'approved') {
+            $finalApproved = (int)$row2['c'];
+        } elseif ($s === 'rejected') {
+            $finalRejected = (int)$row2['c'];
+        }
+    }
+}
 
-// Pending for Adviser
-$pending_sql = "
-    SELECT *
-    FROM proposals
-    WHERE status = 'pending' AND current_stage = 'adviser'
-    ORDER BY date_submitted DESC
-";
-$pending_res       = mysqli_query($conn, $pending_sql);
-$pending_proposals = mysqli_fetch_all($pending_res, MYSQLI_ASSOC);
+$totalApprovedBudget = 0;
+$res3 = mysqli_query(
+    $conn,
+    "SELECT SUM(proposed_budget) AS total
+     FROM proposals
+     WHERE status = 'approved'"
+);
+if ($res3 && $row3 = mysqli_fetch_assoc($res3)) {
+    $totalApprovedBudget = (float)$row3['total'];
+}
 
-include('../../includes/header.php');
+/* ---------- TABLES ---------- */
+
+$forDecision = mysqli_query(
+    $conn,
+    "SELECT id, title, event_date, venue, proposed_budget
+     FROM proposals
+     WHERE status = 'pending'
+       AND current_stage = 'adviser'
+     ORDER BY date_submitted ASC"
+);
+
+$history = mysqli_query(
+    $conn,
+    "SELECT id, title, event_date, proposed_budget, adviser_status, review_date
+     FROM proposals
+     WHERE current_stage = 'final'
+     ORDER BY review_date DESC
+     LIMIT 10"
+);
 ?>
-
-<div class="dashboard-container">
+<div class="dashboard">
     <div class="dashboard-header">
-        <div class="header-content">
-            <h1>Adviser Dashboard</h1>
-            <p>Welcome, <strong><?php echo htmlspecialchars($_SESSION['full_name']); ?></strong>! Final review and approval of event proposals.</p>
+        <h1>Adviser Dashboard</h1>
+        <p>Review organization-endorsed proposals and issue final approval or rejection.</p>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card pending">
+            <span class="stat-label">Pending Final Decision</span>
+            <span class="stat-value"><?php echo $pendingFinal; ?></span>
+        </div>
+        <div class="stat-card approved">
+            <span class="stat-label">Final Approved</span>
+            <span class="stat-value"><?php echo $finalApproved; ?></span>
+        </div>
+        <div class="stat-card rejected">
+            <span class="stat-label">Final Rejected</span>
+            <span class="stat-value"><?php echo $finalRejected; ?></span>
+        </div>
+        <div class="stat-card budget">
+            <span class="stat-label">Total Approved Budget</span>
+            <span class="stat-value">₱<?php echo number_format($totalApprovedBudget, 2); ?></span>
         </div>
     </div>
 
-    <?php if (!empty($_SESSION['success'])): ?>
-        <div class="alert alert-success"><?php echo $_SESSION['success']; unset($_SESSION['success']); ?></div>
-    <?php endif; ?>
-    <?php if (!empty($_SESSION['error'])): ?>
-        <div class="alert alert-error"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
-    <?php endif; ?>
-
-    <!-- Stats Cards -->
-    <div class="stats-cards">
-        <div class="stat-card">
-            <div class="stat-icon">⏳</div>
-            <div class="stat-info">
-                <h3><?php echo (int)($counts['pending_adviser'] ?? 0); ?></h3>
-                <p>Pending Final Approval</p>
+    <div class="charts-grid">
+        <div class="card">
+            <h2>Proposals Awaiting Final Decision</h2>
+            <div class="table-wrapper">
+                <table class="proposals-table">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Event Date</th>
+                            <th>Venue</th>
+                            <th>Budget</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php if ($forDecision && mysqli_num_rows($forDecision) > 0): ?>
+                        <?php while ($p = mysqli_fetch_assoc($forDecision)): ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($p['title']); ?></td>
+                                <td><?php echo htmlspecialchars($p['event_date']); ?></td>
+                                <td><?php echo htmlspecialchars($p['venue']); ?></td>
+                                <td>₱<?php echo number_format($p['proposed_budget'], 2); ?></td>
+                                <td>
+                                    <a href="review_proposal.php?id=<?php echo (int)$p['id']; ?>" class="btn btn-sm btn-primary">
+                                        Decide
+                                    </a>
+                                </td>
+                            </tr>
+                        <?php endwhile; ?>
+                    <?php else: ?>
+                        <tr>
+                            <td colspan="5" class="empty-state">No proposals waiting for final decision.</td>
+                        </tr>
+                    <?php endif; ?>
+                    </tbody>
+                </table>
             </div>
         </div>
 
-        <div class="stat-card">
-            <div class="stat-icon">📋</div>
-            <div class="stat-info">
-                <h3><?php echo (int)($counts['total_proposals'] ?? 0); ?></h3>
-                <p>Total Proposals</p>
+        <div class="card">
+            <h2>Recent Final Decisions</h2>
+            <div class="table-wrapper">
+                <table class="proposals-table">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Event Date</th>
+                            <th>Budget</th>
+                            <th>Adviser Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php if ($history && mysqli_num_rows($history) > 0): ?>
+                        <?php while ($p = mysqli_fetch_assoc($history)): ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($p['title']); ?></td>
+                                <td><?php echo htmlspecialchars($p['event_date']); ?></td>
+                                <td>₱<?php echo number_format($p['proposed_budget'], 2); ?></td>
+                                <td><?php echo ucfirst(htmlspecialchars($p['adviser_status'])); ?></td>
+                            </tr>
+                        <?php endwhile; ?>
+                    <?php else: ?>
+                        <tr>
+                            <td colspan="4" class="empty-state">No final decisions recorded yet.</td>
+                        </tr>
+                    <?php endif; ?>
+                    </tbody>
+                </table>
             </div>
-        </div>
-
-        <div class="stat-card">
-            <div class="stat-icon">✅</div>
-            <div class="stat-info">
-                <h3><?php echo (int)($counts['approved'] ?? 0); ?></h3>
-                <p>Approved Proposals</p>
-            </div>
-        </div>
-
-        <div class="stat-card">
-            <div class="stat-icon">❌</div>
-            <div class="stat-info">
-                <h3><?php echo (int)($counts['rejected'] ?? 0); ?></h3>
-                <p>Rejected Proposals</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Pending for Adviser Section -->
-    <div class="proposals-section">
-        <div class="section-header">
-            <h2>Proposals Awaiting Your Decision</h2>
-            <p>These proposals have passed Treasurer and President, and are now waiting for your final approval.</p>
-        </div>
-
-        <div class="proposals-grid">
-            <?php if (!empty($pending_proposals)): ?>
-                <?php foreach ($pending_proposals as $proposal): ?>
-                    <div class="proposal-card">
-                        <div class="card-header">
-                            <h3><?php echo htmlspecialchars($proposal['title']); ?></h3>
-                            <span class="status-badge status-pending">Pending (Adviser)</span>
-                        </div>
-
-                        <div class="card-body">
-                            <div class="proposal-meta">
-                                <div class="meta-item">
-                                    <strong>Event Date:</strong>
-                                    <span><?php echo date('M j, Y', strtotime($proposal['event_date'])); ?></span>
-                                </div>
-                                <div class="meta-item">
-                                    <strong>Venue:</strong>
-                                    <span><?php echo htmlspecialchars($proposal['venue']); ?></span>
-                                </div>
-                                <div class="meta-item">
-                                    <strong>Participants:</strong>
-                                    <span><?php echo (int)$proposal['expected_participants']; ?> students</span>
-                                </div>
-                                <div class="meta-item">
-                                    <strong>Proposed Budget:</strong>
-                                    <span>₱<?php echo number_format($proposal['proposed_budget'], 2); ?></span>
-                                </div>
-                                <div class="meta-item">
-                                    <strong>Created by:</strong>
-                                    <span><?php echo htmlspecialchars($proposal['created_by']); ?></span>
-                                </div>
-                            </div>
-
-                            <?php if (!empty($proposal['objectives'])): ?>
-                                <div class="detail-section">
-                                    <h4>Objectives</h4>
-                                    <p><?php echo nl2br(htmlspecialchars($proposal['objectives'])); ?></p>
-                                </div>
-                            <?php endif; ?>
-
-                            <?php if (!empty($proposal['budget_breakdown'])): ?>
-                                <div class="detail-section">
-                                    <h4>Budget Breakdown</h4>
-                                    <p><?php echo nl2br(htmlspecialchars($proposal['budget_breakdown'])); ?></p>
-                                </div>
-                            <?php endif; ?>
-
-                            <?php if (!empty($proposal['treasurer_remarks'])): ?>
-                                <div class="detail-section">
-                                    <h4>Treasurer Remarks</h4>
-                                    <p><?php echo nl2br(htmlspecialchars($proposal['treasurer_remarks'])); ?></p>
-                                </div>
-                            <?php endif; ?>
-
-                            <?php if (!empty($proposal['president_remarks'])): ?>
-                                <div class="detail-section">
-                                    <h4>President Remarks</h4>
-                                    <p><?php echo nl2br(htmlspecialchars($proposal['president_remarks'])); ?></p>
-                                </div>
-                            <?php endif; ?>
-                        </div>
-
-                        <div class="card-actions">
-                            <form method="POST" class="review-form">
-                                <input type="hidden" name="proposal_id" value="<?php echo $proposal['id']; ?>">
-
-                                <div class="form-group">
-                                    <label for="remarks_<?php echo $proposal['id']; ?>">Your Remarks (optional)</label>
-                                    <textarea
-                                        id="remarks_<?php echo $proposal['id']; ?>"
-                                        name="remarks"
-                                        rows="2"
-                                        placeholder="Add final remarks or reasons for approval/rejection..."
-                                    ></textarea>
-                                </div>
-
-                                <div class="button-group">
-                                    <button type="submit" name="action" value="approve" class="btn btn-primary"
-                                            onclick="return confirm('Approve this proposal as FINAL?');">
-                                        ✅ Approve
-                                    </button>
-                                    <button type="submit" name="action" value="reject" class="btn btn-danger"
-                                            onclick="return confirm('Reject this proposal as FINAL?');">
-                                        ❌ Reject
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
-            <?php else: ?>
-                <div class="empty-state">
-                    <div class="empty-icon">✅</div>
-                    <h4>All Caught Up!</h4>
-                    <p>No proposals are currently waiting for your final approval.</p>
-                </div>
-            <?php endif; ?>
         </div>
     </div>
 </div>
 
-<?php include('../../includes/footer.php'); ?>
+<?php include '../../includes/footer.php'; ?>

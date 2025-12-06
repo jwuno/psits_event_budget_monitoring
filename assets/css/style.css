@@ -1,2173 +1,465 @@
-/* GENERAL RESET */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: "Poppins", sans-serif;
+/* =========================================
+   PSITS EVENT & BUDGET PORTAL – MAIN THEME
+   (Dashboard / Inner Pages)
+   ========================================= */
+
+:root {
+    --primary: #003b88;
+    --primary-dark: #00285c;
+    --primary-light: #e4f0ff;
+    --accent: #00c4ff;
+
+    --bg-page: #edf1f7;
+    --bg-card: #ffffff;
+    --bg-header: #003b88;
+    --bg-header-soft: #0b2c61;
+
+    --text-main: #0f172a;
+    --text-muted: #6b7280;
+    --text-on-primary: #ffffff;
+
+    --border-soft: #d1d5db;
+
+    --radius-base: 14px;
+    --radius-lg: 22px;
+
+    --shadow-soft: 0 14px 35px rgba(15, 23, 42, 0.18);
+    --shadow-card: 0 10px 25px rgba(15, 23, 42, 0.12);
+
+    --font-main: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-/* PAGE BACKGROUND */
-body {
-  background: #f7f9fb;
-  color: #333;
+/* ===== Global reset-ish ===== */
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
 }
 
-/* NAVBAR */
-.navbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: #002b5b;
-  color: #fff;
-  padding: 10px 20px;
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: var(--font-main);
+    color: var(--text-main);
+    background: var(--bg-page);
 }
 
-/* Navbar Left - Title */
-.navbar-left h2 {
-  font-size: 18px;
+a {
+    color: inherit;
+    text-decoration: none;
 }
 
-/* Navbar Right - Notification and Profile */
-.navbar-right {
-  display: flex;
-  align-items: center;
-  gap: 15px;
+img {
+    max-width: 100%;
+    display: block;
 }
 
-/* Notification Bell Icon */
-.notification-menu {
-  position: relative;
+/* =========================================
+   HEADER
+   ========================================= */
+
+.main-header {
+    background: linear-gradient(135deg, var(--bg-header), var(--bg-header-soft));
+    color: var(--text-on-primary);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.9rem 6%;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.45);
+    position: sticky;
+    top: 0;
+    z-index: 20;
 }
 
-.notification-icon {
-  position: relative;
-  font-size: 20px;
-  color: #fff;
-  cursor: pointer;
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
 }
 
-/* Notification Badge */
-.notification-badge {
-  position: absolute;
-  top: -5px;
-  right: -10px;
-  background: #ff4c4c;
-  color: white;
-  border-radius: 50%;
-  padding: 2px 6px;
-  font-size: 10px;
-  font-weight: bold;
+.logo-wrap {
+    width: 74px;
+    height: 74px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border: 2px solid rgba(255, 255, 255, 0.4);
 }
 
-/* Profile Icon */
-.profile-menu {
-  position: relative;
+.logo-img {
+    width: 68px;
+    height: 68px;
+    object-fit: contain;
 }
 
-.profile-icon {
-  font-size: 22px;
-  color: white;
-  cursor: pointer;
-  padding: 5px;
-  border-radius: 50%;
-  border: 1px solid white;
+.header-title-group h1 {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
 }
 
-/* Dropdown */
-.dropdown {
-  display: none;
-  position: absolute;
-  top: 40px;
-  right: 0;
-  background: white;
-  color: #333;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  min-width: 170px;
-  padding: 10px;
-  z-index: 100;
+.header-title-group p {
+    margin: 0.1rem 0 0;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    opacity: 0.85;
 }
 
-.dropdown.show {
-  display: block;
+.header-right {
+    display: flex;
+    align-items: center;
 }
 
-/* Dropdown Content */
-.profile-name {
-  font-weight: bold;
-  margin-bottom: 5px;
+.user-menu {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.9rem;
 }
 
-.profile-role {
-  font-size: 13px;
-  margin-bottom: 10px;
-  color: gray;
+.user-name {
+    font-weight: 600;
 }
 
-.logout-btn {
-  display: block;
-  width: 100%;
-  text-align: left;
-  padding: 8px;
-  background: #f8f8f8;
-  border-radius: 5px;
-  border: none;
-  cursor: pointer;
-  color: #333;
-  font-size: 14px;
+.user-role {
+    font-size: 0.78rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.25);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
 }
 
-.logout-btn i {
-  margin-right: 5px;
+.btn-logout {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #e5e7eb;
+    font-size: 0.8rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: background 0.18s ease, transform 0.08s ease,
+                box-shadow 0.18s ease;
 }
 
-.logout-btn:hover {
-  background: #eee;
+.btn-logout:hover {
+    background: rgba(255, 255, 255, 0.18);
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.45);
+    transform: translateY(-1px);
 }
 
-/* DASHBOARD LAYOUT */
-.dashboard-container {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  padding: 15px 30px;
+.btn-logout i {
+    font-size: 0.85rem;
 }
 
-/* Header Section */
-.dashboard-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
+/* =========================================
+   MAIN LAYOUT
+   ========================================= */
 
-.header-content h1 {
-  font-size: 24px;
-  margin: 0;
-}
-
-.header-content p {
-  color: #777;
-}
-
-/* Summary Cards Layout */
-.stats-cards {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 15px;
-}
-
-/* Individual Stat Card */
-.stat-card {
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
-  text-align: left;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
-}
-
-.stat-card h3 {
-  font-size: 20px;
-  margin-bottom: 8px;
-}
-
-.stat-card p {
-  color: #666;
-  font-size: 14px;
-}
-
-.stat-link {
-  display: inline-block;
-  margin-top: 10px;
-  font-size: 13px;
-  color: #007bff;
-  text-decoration: none;
-}
-
-.stat-link:hover {
-  text-decoration: underline;
-}
-
-/* Table Wrapper */
-.table-responsive {
-  background: white;
-  padding: 15px;
-  border-radius: 8px;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
-}
-
-.data-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.data-table thead {
-  background: #002b5b;
-  color: white;
-}
-
-.data-table th,
-.data-table td {
-  padding: 10px 12px;
-  border-bottom: 1px solid #ddd;
-  text-align: left;
-}
-
-.data-table tbody tr:hover {
-  background: #f5f5f5;
-}
-
-.btn-view {
-  display: inline-block;
-  padding: 6px 10px;
-  border-radius: 4px;
-  background: #007bff;
-  color: white;
-  text-decoration: none;
-  font-size: 13px;
-}
-
-.btn-view:hover {
-  background: #0056b3;
-}
-
-/* Empty State */
-.empty-state {
-  padding: 20px;
-  text-align: center;
-  color: #777;
-}
-
-/* === PROPOSAL STATUS BADGES === */
-.status-badge {
-  display: inline-block;
-  padding: 4px 8px;
-  border-radius: 20px;
-  font-size: 12px;
-  color: #fff;
-}
-
-/* Proposal Status Colors */
-.status-pending {
-  background: #ffc107;
-}
-
-.status-approved {
-  background: #28a745;
-}
-
-.status-rejected {
-  background: #dc3545;
-}
-
-.status-final {
-  background: #007bff;
-}
-
-/* Role-based Colors (example; you can customize as needed) */
-.status-treasurer,
-.status-badge.status-treasurer {
-  background: #17a2b8;
-}
-
-.status-president,
-.status-badge.status-president {
-  background: #6f42c1;
-}
-
-.status-adviser,
-.status-badge.status-adviser {
-  background: #20c997;
-}
-
-/* Link/Button to manage proposals */
-.btn-manage {
-  display: inline-block;
-  padding: 6px 12px;
-  background: #002b5b;
-  color: #fff;
-  border-radius: 4px;
-  text-decoration: none;
-  font-size: 13px;
-}
-
-.btn-manage:hover {
-  background: #004080;
-}
-
-/* ALERTS */
-.alert {
-  padding: 10px 15px;
-  border-radius: 4px;
-  margin-bottom: 15px;
-  font-size: 14px;
-}
-
-.alert-success {
-  background: #d4edda;
-  color: #155724;
-}
-
-.alert-error {
-  background: #f8d7da;
-  color: #721c24;
-}
-
-/* HEADER BUTTON - MARK ALL AS READ */
-.btn-mark-all {
-  display: inline-block;
-  padding: 6px 12px;
-  border-radius: 4px;
-  background: #6c757d;
-  color: #fff;
-  text-decoration: none;
-  font-size: 13px;
-}
-
-.btn-mark-all:hover {
-  background: #5a6268;
-}
-
-/* MAIN CONTENT SPACING */
 .main-content {
-  padding: 20px;
+    padding: 1.8rem 6% 2.5rem;
+    min-height: calc(100vh - 120px);
 }
 
-/* Notification List Styling */
-.notification-list {
-  list-style: none;
-  padding: 0;
-}
-
-.notification-item {
-  padding: 10px 15px;
-  border-bottom: 1px solid #eee;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.notification-item.unread {
-  background: #f1f7ff;
-  font-weight: bold;
-}
-
-.notif-message {
-  max-width: 75%;
-}
-
-.notif-meta {
-  font-size: 12px;
-  color: #666;
-}
-
-/* FOOTER */
-footer {
-  text-align: center;
-  padding: 10px 0;
-  font-size: 12px;
-  color: #888;
-}
-
-/* NAVIGATION BUTTONS */
-.btn-back {
-  display: inline-block;
-  padding: 8px 12px;
-  border-radius: 4px;
-  background: #6c757d;
-  color: #fff;
-  text-decoration: none;
-  font-size: 13px;
-}
-
-.btn-back:hover {
-  background: #5a6268;
-}
-
-/* Card Component Shared */
-.card {
-  background: #fff;
-  padding: 15px;
-  border-radius: 8px;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
-}
-
-/* Header Title */
-.card-title {
-  font-size: 18px;
-  margin-bottom: 10px;
-}
-
-/* Small text description */
-.card-desc {
-  font-size: 13px;
-  color: #777;
-}
-
-/* Notification section for empty notifications */
-.notification-container {
-  max-width: 800px;
-  margin: 15px auto;
-}
-
-/* In-card button links */
-.card-actions a,
-.card-actions button {
-  margin-top: 10px;
-}
-
-/* Content structure */
-.dashboard-row {
-  display: flex;
-  gap: 15px;
-  flex-wrap: wrap;
-}
-
-.dashboard-column {
-  flex: 1;
-  min-width: 250px;
-}
-
-/* Ensure responsiveness */
-@media (max-width: 768px) {
-  .stats-cards {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .dashboard-container {
-    padding: 10px;
-  }
-}
-
-/* DASHBOARD GENERAL LAYOUT */
-.dashboard-container {
-  padding: 20px 40px;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-/* Dashboard Title & Subtitle */
-.dashboard-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.dashboard-header h1 {
-  font-size: 24px;
-}
-
-.dashboard-header p {
-  color: #6c757d;
-  margin-top: 4px;
-}
-
-/* Stat Cards Layout */
-.stats-cards {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 15px;
-  margin-bottom: 20px;
-}
-
-/* Individual Stat Card */
-.stat-card {
-  background: #ffffff;
-  padding: 16px 18px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-}
-
-.stat-card .stat-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: #e9f2ff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-}
-
-/* General Alert Styling */
-.alert {
-  padding: 10px 15px;
-  border-radius: 5px;
-  margin-bottom: 15px;
-  font-size: 14px;
-}
-
-.alert-success {
-  background-color: #d4edda;
-  color: #155724;
-}
-
-.alert-error {
-  background-color: #f8d7da;
-  color: #721c24;
-}
-
-/* Button Styling */
-.btn-primary,
-.btn-back {
-  padding: 8px 12px;
-  font-size: 14px;
-  border-radius: 5px;
-  cursor: pointer;
-  border: none;
-}
-
-/* Proposal Section */
-.proposals-section {
-  margin-top: 20px;
-}
-
-/* Header inside Proposals section */
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.section-header h2 {
-  font-size: 20px;
-  margin-bottom: 10px;
-}
-
-/* Proposals Grid/Card View */
-.proposals-grid {
-  display: grid;
-  grid-template-columns: 1.5fr 1.5fr;
-  gap: 15px;
-}
-
-.proposal-card {
-  background: #fff;
-  padding: 15px;
-  border-radius: 10px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-}
-
-/* Proposal Card Header */
-.proposal-card .card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.proposal-card h3 {
-  font-size: 18px;
-}
-
-/* Badge for status (e.g., Pending, Approved, etc.) */
-.status-badge {
-  padding: 4px 8px;
-  border-radius: 15px;
-  font-size: 12px;
-}
-
-.status-pending {
-  background-color: #fff3cd;
-  color: #856404;
-}
-
-.status-approved {
-  background-color: #d4edda;
-  color: #155724;
-}
-
-.status-rejected {
-  background-color: #f8d7da;
-  color: #721c24;
-}
-
-/* Proposal Meta Info (Event Date, Venue, etc.) */
-.proposal-meta {
-  margin-top: 10px;
-  font-size: 14px;
-}
-
-.meta-item {
-  margin-bottom: 5px;
-}
-
-/* Proposal Details Sections */
-.detail-section {
-  margin-top: 12px;
-}
-
-.detail-section h4 {
-  font-size: 14px;
-  margin-bottom: 5px;
-}
-
-.detail-section p {
-  font-size: 13px;
-  color: #555;
-  white-space: pre-wrap;
-}
-
-/* Form for Adviser review (remarks & buttons) */
-.card-actions {
-  margin-top: 12px;
-}
-
-.review-form {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-/* Remarks Textarea */
-.review-form textarea {
-  width: 100%;
-  padding: 8px;
-  font-size: 13px;
-}
-
-/* Buttons in Adviser Card */
-.button-group {
-  display: flex;
-  gap: 10px;
-}
-
-/* Approve / Reject Buttons */
-.btn-primary {
-  background-color: #007bff;
-  color: white;
-}
-
-.btn-danger {
-  background-color: #dc3545;
-  color: white;
-}
-
-/* Empty state when there are no pending proposals */
-.empty-state {
-  text-align: center;
-  margin-top: 20px;
-}
-
-.empty-icon {
-  font-size: 40px;
-}
-
-/* Back Button */
-.btn-back {
-  background-color: #6c757d;
-  color: white;
-}
-
-/* Adjust responsiveness for smaller screens */
-@media (max-width: 1024px) {
-  .proposals-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 768px) {
-  .dashboard-container {
-    padding: 10px 20px;
-  }
-
-  .stats-cards {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-/* Editable Form Styling */
-.adjust-form {
-  background: #fff;
-  padding: 15px;
-  border-radius: 10px;
-  margin-top: 15px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-}
-
-.adjust-form h3 {
-  margin-bottom: 10px;
-}
-
-/* Form Layout */
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 15px;
-}
-
-/* Full-width textareas and groups */
-.form-group {
-  margin-bottom: 12px;
-}
-
-/* Label Styling */
-.form-group label {
-  font-size: 13px;
-  display: block;
-  margin-bottom: 4px;
-  font-weight: 500;
-}
-
-/* Input and Textarea Styling */
-.form-group input,
-.form-group textarea {
-  width: 100%;
-  padding: 8px;
-  font-size: 13px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-
-/* Textarea height adjustment */
-.form-group textarea {
-  resize: vertical;
-  min-height: 80px;
-}
-
-/* Action Buttons */
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-}
-
-.btn-submit {
-  background-color: #007bff;
-  color: white;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.btn-submit:hover {
-  background-color: #0056b3;
-}
-
-/* Non-editable section styling */
-.details-view {
-  background: #f8f9fa;
-  padding: 10px;
-  border-radius: 8px;
-}
-
-.details-view h3 {
-  font-size: 18px;
-}
-
-.details-view p {
-  font-size: 14px;
-  color: #555;
-}
-
-/* Action buttons for Approve and Return */
-.btn-approve-large {
-  background-color: #28a745;
-  color: white;
-  padding: 10px 16px;
-  border-radius: 4px;
-  border: none;
-  cursor: pointer;
-}
-
-.btn-approve-large:hover {
-  background-color: #218838;
-}
-
-.btn-reject-large {
-  background-color: #dc3545;
-  color: white;
-  padding: 10px 16px;
-  border-radius: 4px;
-  border: none;
-  cursor: pointer;
-}
-
-.btn-reject-large:hover {
-  background-color: #c82333;
-}
-
-/* Make Adjust form consistent with cards */
-.action-card h3 {
-  margin-bottom: 8px;
-}
-
-/* Ensures readability in smaller screens */
-@media (max-width: 768px) {
-  .form-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .form-actions {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .btn-submit,
-  .btn-approve-large,
-  .btn-reject-large {
-    width: 100%;
-  }
-}
-
-/* GENERAL PAGE LAYOUT */
-.dashboard-container {
-    padding: 20px 40px;
+/* Simple centered container if you want to use it */
+.container {
     max-width: 1200px;
     margin: 0 auto;
 }
 
-/* HEADER */
+/* =========================================
+   DASHBOARD BASICS
+   ========================================= */
+
+.dashboard {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
 .dashboard-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 1.5rem;
 }
 
-.header-content h1 {
-    font-size: 24px;
+.dashboard-header h1 {
     margin: 0;
+    font-size: 1.8rem;
+    color: #0f172a;
 }
 
-.header-content p {
-    color: #6c757d;
-    margin-top: 4px;
+.dashboard-header p {
+    margin-top: 0.35rem;
+    color: var(--text-muted);
+    font-size: 0.92rem;
 }
 
-/* Card */
-.card {
-    background: #ffffff;
-    padding: 16px 18px;
-    border-radius: 10px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-}
+/* =========================================
+   STATS CARDS
+   ========================================= */
 
-/* Card Header */
-.card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-/* Card Title */
-.card-header h2 {
-    font-size: 18px;
-}
-
-/* Back Button */
-.btn-back {
-    padding: 8px 12px;
-    background-color: #6c757d;
-    color: white;
-    border-radius: 5px;
-    text-decoration: none;
-}
-
-.btn-back:hover {
-    background-color: #5a6268;
-}
-
-/* Stats Cards Layout */
-.stats-cards {
+.stats-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 15px;
-    margin-bottom: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 1rem;
+    margin: 1.2rem 0 1.5rem;
 }
 
-/* Individual Stat Card */
 .stat-card {
-    background: #ffffff;
-    padding: 16px 18px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    background: var(--bg-card);
+    border-radius: var(--radius-base);
+    padding: 1rem 1.25rem;
+    box-shadow: var(--shadow-card);
+    position: relative;
+    overflow: hidden;
 }
 
-/* Icon Circle */
-.stat-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: #e9f2ff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
+.stat-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    opacity: 0.2;
+    background: radial-gradient(circle at top left, rgba(255,255,255,0.7), transparent 55%);
+    pointer-events: none;
 }
 
-/* Stat Info */
-.stat-info h3 {
-    margin: 0;
-    font-size: 20px;
+.stat-label {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: var(--text-muted);
 }
 
-.stat-info p {
-    margin: 4px 0 0;
-    font-size: 13px;
+.stat-value {
+    display: block;
+    margin-top: 0.4rem;
+    font-size: 1.5rem;
+    font-weight: 700;
 }
 
-/* TABLE WRAPPER */
-.table-responsive {
-    background: #ffffff;
-    padding: 15px;
-    border-radius: 10px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+/* color accents */
+.stat-card.approved .stat-value { color: #16a34a; }
+.stat-card.pending  .stat-value { color: #2563eb; }
+.stat-card.rejected .stat-value { color: #dc2626; }
+.stat-card.budget   .stat-value { color: #0f172a; }
+
+/* =========================================
+   GENERIC CARD
+   ========================================= */
+
+.card {
+    background: var(--bg-card);
+    border-radius: var(--radius-base);
+    padding: 1.25rem 1.5rem;
+    margin-top: 1.5rem;
+    box-shadow: var(--shadow-card);
 }
 
-/* TABLE */
-.data-table {
+.card h2 {
+    margin: 0 0 0.75rem;
+    font-size: 1.15rem;
+    color: #111827;
+}
+
+/* =========================================
+   CHARTS LAYOUT
+   ========================================= */
+
+.charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.25rem;
+    margin-top: 1.25rem;
+}
+
+/* canvas responsive */
+.charts-grid canvas {
+    width: 100% !important;
+    max-height: 280px;
+}
+
+/* =========================================
+   TABLE STYLING (proposals)
+   ========================================= */
+
+.table-wrapper {
+    overflow-x: auto;
+    margin-top: 0.75rem;
+}
+
+.proposals-table {
     width: 100%;
     border-collapse: collapse;
+    font-size: 0.9rem;
 }
 
-.data-table thead {
-    background:#002b5b;
-    color: white;
+.proposals-table thead {
+    background: #f9fafb;
 }
 
-.data-table th,
-.data-table td {
-    padding: 10px 12px;
-    border-bottom: 1px solid #ddd;
+.proposals-table th,
+.proposals-table td {
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid #e5e7eb;
     text-align: left;
 }
 
-.data-table tbody tr:hover {
-    background: #f5f5f5;
-}
-
-/* Buttons */
-.btn-view {
-    display: inline-block;
-    padding: 6px 10px;
-    background: #007bff;
-    color: white;
-    border-radius: 4px;
-    text-decoration: none;
-    font-size: 13px;
-}
-
-.btn-view:hover {
-    background: #0056b3;
-}
-
-/* EMPTY STATE FOR TABLES */
-.empty-state {
-    padding: 20px;
-    text-align: center;
-    color: #777;
-}
-
-/* Plan cards layout */
-.plan-cards {
-    margin-top: 20px;
-}
-
-/* Individual Plan Card */
-.plan-card {
-    background: #ffffff;
-    padding: 18px;
-    border-radius: 10px;
-    margin-bottom: 12px;
-    border-left: 4px solid #002b5b;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-}
-
-/* Plan Title */
-.plan-title {
-    font-size: 16px;
-    margin-bottom: 6px;
+.proposals-table th {
     font-weight: 600;
+    color: #4b5563;
+    font-size: 0.82rem;
 }
 
-/* Plan Content */
-.plan-content {
-    font-size: 14px;
-    color: #555;
+.proposals-table tbody tr:hover {
+    background: #f3f4ff;
 }
 
-/* CTA button (if any) in plan card */
-.plan-card .btn {
-    margin-top: 10px;
-}
-
-/* Budget Summary Cards */
-.budget-cards {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 15px;
-    margin-bottom: 20px;
-}
-
-/* Budget Cards Style */
-.budget-cards .stat-card {
-    background: #ffffff;
-    padding: 18px;
-    border-radius: 10px;
-}
-
-/* Budget Label */
-.stat-sub {
-    font-size: 12px;
-    color: #6c757d;
-}
-
-/* ICONS FOR BUDGET */
-.stat-icon {
-    background: #e0f0ff;
-    color: #002b5b;
-}
-
-/* Empty State within Cards */
 .empty-state {
-    background: #fafafa;
-    border-radius: 8px;
-    padding: 20px;
-    color: #777;
+    text-align: center;
+    padding: 0.9rem 0.5rem;
+    color: var(--text-muted);
+    font-size: 0.9rem;
 }
 
-/* Responsive layout for smaller screens */
-@media (max-width: 992px) {
-    .stats-cards,
-    .budget-cards {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
+/* =========================================
+   BUTTONS
+   ========================================= */
 
-@media (max-width: 576px) {
-    .stats-cards,
-    .budget-cards {
-        grid-template-columns: 1fr;
-    }
-
-    .dashboard-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-    }
-}
-
-/* Header section */
-.dashboard-header {
-  margin-bottom: 20px;
-}
-
-/* Container Layout */
-.proposal-detail {
-  display: grid;
-  grid-template-columns: 2fr 1.5fr;
-  gap: 20px;
-  margin-top: 10px;
-}
-
-/* Proposal Card Styling */
-.proposal-card {
-  background: #fff;
-  padding: 18px;
-  border-radius: 10px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-}
-
-/* Proposal Header */
-.proposal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.proposal-header h3 {
-  font-size: 20px;
-}
-
-/* Proposal Details */
-.proposal-details {
-  margin: 10px 0;
-}
-
-.detail-item {
-  margin-bottom: 6px;
-  font-size: 14px;
-}
-
-.detail-item strong {
-  font-weight: 600;
-}
-
-/* Section for long text (objectives, activities, etc.) */
-.detail-section {
-  margin-top: 10px;
-}
-
-.detail-section h3 {
-  font-size: 16px;
-  margin-bottom: 5px;
-}
-
-.detail-section p {
-  font-size: 14px;
-  color: #555;
-  white-space: pre-wrap;
-}
-
-/* Attachment Button */
-.btn-download {
-  display: inline-block;
-  padding: 8px 12px;
-  background-color: #007bff;
-  color: #fff;
-  border-radius: 5px;
-  text-decoration: none;
-  font-size: 14px;
-}
-
-.btn-download:hover {
-  background-color: #0056b3;
-}
-
-/* Right-side panel: actions or summary */
-.action-card,
-.detail-card {
-  background: #fff;
-  padding: 14px;
-  border-radius: 10px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-}
-
-/* Form styling */
-.form-group {
-  margin-bottom: 10px;
-}
-
-.form-group label {
-  display: block;
-  font-size: 14px;
-  font-weight: 500;
-  margin-bottom: 4px;
-}
-
-/* Show read-only summary if not actionable */
-.detail-card p {
-  font-size: 14px;
-  margin-bottom: 6px;
-}
-
-/* Buttons */
-.btn-approve-large,
-.btn-reject-large,
-.btn-primary {
-  display: inline-block;
-  padding: 8px 12px;
-  border-radius: 5px;
-  border: none;
-  cursor: pointer;
-}
-
-.btn-approve-large {
-  background-color: #28a745;
-  color: white;
-}
-
-.btn-approve-large:hover {
-  background-color: #218838;
-}
-
-.btn-reject-large {
-  background-color: #dc3545;
-  color: white;
-}
-
-.btn-reject-large:hover {
-  background-color: #c82333;
-}
-
-/* Return to Secretary Form */
-.reject-form textarea {
-  resize: vertical;
-}
-
-/* Badge styling for status and stages */
-.status-badge {
-  font-size: 12px;
-}
-
-.status-final {
-  background-color: #343a40;
-  color: white;
-}
-
-/* Budget highlight */
-.budget-amount {
-  font-weight: bold;
-  color: #007bff;
-}
-
-/* Responsive */
-@media (max-width: 900px) {
-  .proposal-detail {
-      grid-template-columns: 1fr;
-  }
-}
-
-/* General Layout */
-.proposal-detail {
-    display: grid;
-    grid-template-columns: 2fr 1.5fr;
-    gap: 20px;
-    margin-top: 10px;
-}
-
-/* Left panel (proposal details) */
-.proposal-card {
-    background: #fff;
-    padding: 18px;
-    border-radius: 10px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-}
-
-/* Right panel (action card) */
-.action-card,
-.detail-card {
-    background: #fff;
-    padding: 14px;
-    border-radius: 10px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-}
-
-/* Form Layout */
-.form-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 15px;
-}
-
-/* Form group styling */
-.form-group label {
-    font-size: 13px;
-    display: block;
-    margin-bottom: 4px;
-    font-weight: 500;
-}
-
-/* Textareas & Inputs */
-.form-group input,
-.form-group textarea {
-    width: 100%;
-    padding: 8px;
-    font-size: 13px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-}
-
-/* Textarea resizing */
-.form-group textarea {
-    resize: vertical;
-    min-height: 80px;
-}
-
-/* Form actions */
-.form-actions {
-    margin-top: 10px;
-    display: flex;
-    gap: 10px;
-    justify-content: flex-end;
-}
-
-/* Buttons */
-.btn-primary,
-.btn-approve-large,
-.btn-reject-large {
-    padding: 8px 12px;
-    border-radius: 5px;
-    border: none;
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    border-radius: 999px;
+    padding: 0.45rem 0.95rem;
+    font-size: 0.85rem;
+    border: 1px solid transparent;
     cursor: pointer;
+    background: #e5e7eb;
+    color: #111827;
+    transition: background 0.18s ease, color 0.18s ease,
+                box-shadow 0.18s ease, transform 0.08s ease;
 }
 
-/* Primary (submit/resubmit) */
+.btn:hover {
+    background: #d4d4d8;
+    box-shadow: 0 6px 15px rgba(15, 23, 42, 0.2);
+    transform: translateY(-1px);
+}
+
 .btn-primary {
-    background-color: #007bff;
-    color: white;
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: #ffffff;
+    border-color: #0f172a;
 }
 
 .btn-primary:hover {
-    background-color: #0056b3;
+    filter: brightness(1.05);
 }
 
-/* Approve (green) */
-.btn-approve-large {
-    background-color: #28a745;
-    color: white;
+.btn-sm {
+    padding: 0.35rem 0.8rem;
+    font-size: 0.8rem;
 }
 
-.btn-approve-large:hover {
-    background-color: #218838;
+/* =========================================
+   FORMS (used in create/edit/review)
+   ========================================= */
+
+.form-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-base);
+    padding: 1.4rem 1.6rem;
+    box-shadow: var(--shadow-card);
+    max-width: 900px;
+    margin: 0 auto 2rem;
 }
 
-/* Reject (red) */
-.btn-reject-large {
-    background-color: #dc3545;
-    color: white;
-}
-
-.btn-reject-large:hover {
-    background-color: #c82333;
-}
-
-/* Non-editable summary card */
-.detail-card p {
-    font-size: 14px;
-    margin-bottom: 6px;
-}
-
-/* Responsive for smaller screens */
-@media (max-width: 900px) {
-    .proposal-detail {
-        grid-template-columns: 1fr;
-    }
-
-    .form-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .form-actions {
-        flex-direction: column;
-        align-items: stretch;
-    }
-}
-
-/* General Styling */
-.proposal-detail {
-  display: grid;
-  grid-template-columns: 2fr 1.5fr;
-  gap: 20px;
-  margin-top: 10px;
-}
-
-.proposal-card,
-.action-card,
-.detail-card {
-  background: #fff;
-  padding: 18px;
-  border-radius: 10px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-}
-
-/* Left: Proposal Details */
-.proposal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.proposal-header h3 {
-  font-size: 20px;
-}
-
-.proposal-details {
-  margin: 10px 0;
-}
-
-.detail-item {
-  font-size: 14px;
-  margin-bottom: 6px;
-}
-
-.detail-section {
-  margin-top: 10px;
-}
-
-.detail-section h3 {
-  font-size: 16px;
-  margin-bottom: 5px;
-}
-
-.detail-section p {
-  font-size: 14px;
-  color: #555;
-  white-space: pre-wrap;
-}
-
-/* Attachment Button */
-.btn-download {
-  display: inline-block;
-  padding: 8px 12px;
-  background-color: #007bff;
-  color: #fff;
-  border-radius: 5px;
-  text-decoration: none;
-  font-size: 14px;
-}
-
-.btn-download:hover {
-  background-color: #0056b3;
-}
-
-/* Right: Action Form */
-.action-card h3 {
-  margin-bottom: 8px;
-}
-
-.action-card p {
-  font-size: 13px;
-  color: #666;
-  margin-bottom: 10px;
-}
-
-/* Form Layout */
 .form-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 15px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 1rem 1.25rem;
 }
 
-/* Full-width textareas and groups */
 .form-group {
-  margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-bottom: 0.6rem;
 }
 
-/* Label Styling */
 .form-group label {
-  font-size: 13px;
-  display: block;
-  margin-bottom: 4px;
-  font-weight: 500;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #111827;
 }
 
-/* Input and Textarea Styling */
 .form-group input,
+.form-group select,
 .form-group textarea {
-  width: 100%;
-  padding: 8px;
-  font-size: 13px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+    border-radius: 10px;
+    border: 1px solid var(--border-soft);
+    padding: 0.45rem 0.6rem;
+    font-size: 0.88rem;
+    font-family: var(--font-main);
+    resize: vertical;
 }
 
-/* Textarea height adjustment */
 .form-group textarea {
-  resize: vertical;
-  min-height: 80px;
+    min-height: 110px;
 }
 
-/* Action Buttons */
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
+/* =========================================
+   FOOTER
+   ========================================= */
+
+.main-footer {
+    text-align: center;
+    padding: 0.85rem 1rem;
+    font-size: 0.8rem;
+    color: #9ca3af;
+    background: #001a3a;
+    border-top: 1px solid rgba(148, 163, 184, 0.4);
 }
 
-/* Buttons */
-.btn-approve-large {
-  background-color: #28a745;
-  color: white;
-  padding: 10px 16px;
-  border-radius: 4px;
-  border: none;
-  cursor: pointer;
+/* =========================================
+   RESPONSIVE
+   ========================================= */
+
+@media (max-width: 768px) {
+    .main-header {
+        padding: 0.8rem 1.25rem;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+    }
+
+    .header-title-group h1 {
+        font-size: 1.1rem;
+    }
+
+    .main-content {
+        padding: 1.4rem 1.2rem 2rem;
+    }
+
+    .form-card {
+        padding: 1.2rem 1.1rem;
+    }
 }
 
-.btn-approve-large:hover {
-  background-color: #218838;
-}
-
-.btn-reject-large {
-  background-color: #dc3545;
-  color: white;
-  padding: 10px 16px;
-  border-radius: 4px;
-  border: none;
-  cursor: pointer;
-}
-
-.btn-reject-large:hover {
-  background-color: #c82333;
-}
-
-/* Read-only summary card */
-.detail-card p {
-  font-size: 14px;
-  margin-bottom: 6px;
-}
-
-/* Badge styling for status */
-.status-badge {
-  padding: 4px 8px;
-  border-radius: 15px;
-  font-size: 12px;
-}
-
-/* Highlighted budget */
-.budget-amount {
-  font-weight: bold;
-  color: #007bff;
-}
-
-/* Responsive Design */
-@media (max-width: 900px) {
-  .proposal-detail {
-      grid-template-columns: 1fr;
-  }
-
-  .form-grid {
-      grid-template-columns: 1fr;
-  }
-
-  .form-actions {
-      flex-direction: column;
-      align-items: stretch;
-  }
-
-  .btn-approve-large,
-  .btn-reject-large {
-      width: 100%;
-  }
-}
-
-/* Container Layout */
-.proposal-detail {
-  display: grid;
-  grid-template-columns: 2fr 1.5fr;
-  gap: 20px;
-  margin-top: 10px;
-}
-
-/* Left: Non-editable details card */
-.proposal-card {
-  background: #fff;
-  padding: 18px;
-  border-radius: 10px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-}
-
-/* Right: Resubmit (Adjust) form */
-.action-card {
-  background: #fff;
-  padding: 18px;
-  border-radius: 10px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-}
-
-/* Header content in the proposal card */
-.proposal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.proposal-header h3 {
-  font-size: 20px;
-}
-
-/* Meta details for date, venue, etc. */
-.proposal-details {
-  margin: 10px 0;
-}
-
-.detail-item {
-  font-size: 14px;
-  margin-bottom: 6px;
-}
-
-/* Sections for text content (objectives, activities, etc.) */
-.detail-section {
-  margin-top: 10px;
-}
-
-.detail-section h3 {
-  font-size: 16px;
-  margin-bottom: 5px;
-}
-
-.detail-section p {
-  font-size: 14px;
-  color: #555;
-  white-space: pre-wrap;
-}
-
-/* Attachment button styling */
-.btn-download {
-  display: inline-block;
-  padding: 8px 12px;
-  background-color: #007bff;
-  color: #fff;
-  border-radius: 5px;
-  text-decoration: none;
-  font-size: 14px;
-}
-
-.btn-download:hover {
-  background-color: #0056b3;
-}
-
-/* Adjust & Resubmit Form title and message */
-.action-card h3 {
-  font-size: 18px;
-  margin-bottom: 8px;
-}
-
-.action-card p {
-  font-size: 13px;
-  color: #666;
-  margin-bottom: 10px;
-}
-
-/* Grid layout for the top form fields */
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 15px;
-}
-
-/* Full-width fields in the form */
-.form-group {
-  margin-bottom: 10px;
-}
-
-/* Labels */
-.form-group label {
-  font-size: 13px;
-  font-weight: 500;
-  display: block;
-  margin-bottom: 4px;
-}
-
-/* Inputs & Textareas */
-.form-group input,
-.form-group textarea {
-  width: 100%;
-  padding: 8px;
-  font-size: 13px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-
-/* Larger textareas */
-.form-group textarea {
-  resize: vertical;
-  min-height: 80px;
-}
-
-/* Actions section */
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-}
-
-/* Submit button */
-.btn-primary {
-  background-color: #007bff;
-  color: white;
-  padding: 8px 14px;
-  border-radius: 5px;
-  border: none;
-  cursor: pointer;
-}
-
-.btn-primary:hover {
-  background-color: #0056b3;
-}
-
-/* Read-only warning card if not editable */
-.detail-card {
-  background: #fff3cd;
-  padding: 14px;
-  border-radius: 8px;
-  border: 1px solid #ffeeba;
-}
-
-.detail-card h3 {
-  font-size: 16px;
-  margin-bottom: 5px;
-}
-
-.detail-card p {
-  font-size: 14px;
-}
-
-/* Responsive design */
-@media (max-width: 900px) {
-  .proposal-detail {
-      grid-template-columns: 1fr;
-  }
-
-  .form-grid {
-      grid-template-columns: 1fr;
-  }
-
-  .form-actions {
-      flex-direction: column;
-      align-items: stretch;
-  }
-
-  .btn-primary {
-      width: 100%;
-  }
-}
-
-/* Sidebar styling */
-.sidebar {
-  width: 230px;
-  background-color: #002b5b;
-  color: white;
-  padding: 20px;
-  height: 100vh;
-  position: fixed;
-}
-
-/* Sidebar header */
-.sidebar-header {
-  display: flex;
-  align-items: center;
-  margin-bottom: 30px;
-}
-
-/* Circle logo placeholder */
-.logo-circle {
-  width: 45px;
-  height: 45px;
-  border-radius: 50%;
-  border: 2px solid white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 15px;
-}
-
-/* Logo text */
-.logo-circle span {
-  font-weight: bold;
-  font-size: 16px;
-}
-
-.sidebar-header h2 {
-  font-size: 16px;
-  text-transform: uppercase;
-}
-
-/* Sidebar links */
-.sidebar-menu {
-  list-style: none;
-  padding: 0;
-}
-
-.sidebar-menu li {
-  margin-bottom: 10px;
-}
-
-.sidebar-menu a {
-  color: white;
-  text-decoration: none;
-  font-size: 14px;
-  display: block;
-  padding: 10px;
-  border-radius: 5px;
-}
-
-.sidebar-menu a:hover,
-.sidebar-menu a.active {
-  background-color: #004080;
-}
-
-/* Logout button in sidebar */
-.sidebar-logout {
-  position: absolute;
-  bottom: 20px;
-}
-
-/* Align dashboard with sidebar */
-.main-content {
-  margin-left: 230px;
-  padding: 20px;
-}
-
-/* TOP NAVBAR */
-.navbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: #002b5b;
-  color: white;
-  padding: 8px 20px;
-}
-
-/* Navbar Left */
-.navbar-left h2 {
-  font-size: 16px;
-  margin: 0;
-}
-
-/* Navbar Right */
-.navbar-right {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-
-/* Notification Menu */
-.notification-menu {
-  position: relative;
-}
-
-/* Notification Icon */
-.notification-icon {
-  position: relative;
-  font-size: 18px;
-  color: white;
-  cursor: pointer;
-}
-
-/* Notification Badge */
-.notification-badge {
-  position: absolute;
-  top: -5px;
-  right: -8px;
-  background: #ff4c4c;
-  color: white;
-  border-radius: 50%;
-  padding: 2px 6px;
-  font-size: 10px;
-  font-weight: bold;
-}
-
-/* Profile Menu */
-.profile-menu {
-  position: relative;
-}
-
-/* Profile Icon */
-.profile-icon {
-  font-size: 20px;
-  color: white;
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 50%;
-  border: 1px solid white;
-}
-
-/* Dropdown Panel */
-.dropdown {
-  display: none;
-  position: absolute;
-  top: 34px;
-  right: 0;
-  background: white;
-  color: #333;
-  border-radius: 8px;
-  min-width: 170px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-  padding: 10px;
-  z-index: 100;
-}
-
-/* Show Dropdown */
-.dropdown.show {
-  display: block;
-}
-
-/* Dropdown Content */
-.profile-name {
-  font-weight: bold;
-  font-size: 14px;
-  margin-bottom: 4px;
-}
-
-.profile-role {
-  font-size: 12px;
-  color: gray;
-  margin-bottom: 8px;
-}
-
-/* Logout Button */
-.logout-btn {
-  display: block;
-  width: 100%;
-  padding: 8px;
-  background: #f5f5f5;
-  border-radius: 5px;
-  text-align: left;
-  color: #333;
-  text-decoration: none;
-  font-size: 14px;
-  border: none;
-  cursor: pointer;
-}
-
-.logout-btn i {
-  margin-right: 6px;
-}
-
-.logout-btn:hover {
-  background: #e0e0e0;
-}
-
-/* Make sure notification and profile are aligned */
-.notification-menu {
+.chart-wrapper {
     position: relative;
+    width: 100%;
+    height: 260px;
 }
 
-.profile-menu {
-    position: relative;
-}
-
-/* Notification icon styling */
-.notification-icon {
-    position: relative;
-}
-
-/* ================================
-   PSITS Soft Minimal Theme Overrides
-   ================================ */
-:root {
-  --psits-blue: #002b5b;
-  --psits-blue-light: #335c81;
-  --psits-orange: #ff9f1c;
-  --psits-bg: #f7f9fb;
-  --psits-card: #ffffff;
-  --psits-border: #e5e9f0;
-  --psits-text-main: #333333;
-  --psits-text-muted: #6c757d;
-  --psits-shadow-soft: 0 3px 15px rgba(0, 0, 0, 0.05);
-}
-
-/* Global background & text */
-body {
-  background: var(--psits-bg);
-  color: var(--psits-text-main);
-}
-
-/* Navbar stays deep PSITS blue */
-.navbar {
-  background: var(--psits-blue);
-}
-
-/* Profile icon softened to match navbar */
-.profile-icon {
-  font-size: 22px;
-  color: #fff;
-  cursor: pointer;
-  padding: 8px;
-  border-radius: 50%;
-  background-color: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.profile-icon:hover {
-  background-color: rgba(255, 255, 255, 0.18);
-  border-color: #fff;
-}
-
-/* Main dashboard wrapper */
-.dashboard-container {
-  max-width: 1200px;
-  margin: 40px auto;
-  padding: 30px;
-  background: #f7f9fc;
-  border-radius: 16px;
-  box-shadow: var(--psits-shadow-soft);
-  min-height: calc(100vh - 180px);
-}
-
-/* Cards */
-.card {
-  background: var(--psits-card);
-  padding: 22px;
-  border-radius: 14px;
-  box-shadow: var(--psits-shadow-soft);
-  text-align: left;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--psits-blue), var(--psits-orange));
-  opacity: 0.9;
-}
-
-.card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
-}
-
-.card h3 {
-  color: var(--psits-blue);
-  margin-bottom: 8px;
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.card .card-desc {
-  color: var(--psits-text-muted);
-  font-size: 13px;
-  margin-bottom: 12px;
-}
-
-/* Buttons – base */
-.btn,
-button.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 9px 18px;
-  border-radius: 999px;
-  border: none;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-decoration: none;
-  gap: 6px;
-}
-
-/* Primary action – PSITS blue */
-.btn-primary,
-.btn-approve-large,
-.btn-approve,
-.btn-submit {
-  background: var(--psits-blue);
-  color: #fff;
-}
-
-.btn-primary:hover,
-.btn-approve-large:hover,
-.btn-approve:hover,
-.btn-submit:hover {
-  background: var(--psits-blue-light);
-}
-
-/* Secondary / subtle buttons */
-.btn-secondary,
-.btn-back,
-.btn-cancel {
-  background: #e9ecef;
-  color: var(--psits-text-main);
-}
-
-.btn-secondary:hover,
-.btn-back:hover,
-.btn-cancel:hover {
-  background: #dde1e7;
-}
-
-/* Danger / reject */
-.btn-danger,
-.btn-reject-large,
-.btn-reject {
-  background: #e55353;
-  color: #fff;
-}
-
-.btn-danger:hover,
-.btn-reject-large:hover,
-.btn-reject:hover {
-  background: #cc4444;
-}
-
-/* Notification badge with PSITS accent */
-.notification-badge {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  background: var(--psits-orange);
-  color: #fff;
-  font-size: 10px;
-  font-weight: 700;
-  border-radius: 999px;
-  padding: 2px 6px;
-}
-
-/* Detail cards */
-.detail-card {
-  background: #ffffff;
-  padding: 22px;
-  border-radius: 12px;
-  box-shadow: var(--psits-shadow-soft);
-}
-
-/* Form fields */
-.form-group input,
-.form-group textarea,
-.proposal-form input,
-.proposal-form textarea,
-.proposal-form select {
-  width: 100%;
-  padding: 12px 15px;
-  border: 1.5px solid var(--psits-border);
-  border-radius: 6px;
-  font-size: 14px;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.form-group input:focus,
-.form-group textarea:focus,
-.proposal-form input:focus,
-.proposal-form textarea:focus,
-.proposal-form select:focus {
-  outline: none;
-  border-color: var(--psits-blue);
-  box-shadow: 0 0 0 2px rgba(0, 43, 91, 0.12);
-}
-
-/* Status badges */
-.status-badge {
-  padding: 4px 12px;
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-}
-
-.status-pending,
-.status-badge.status-pending {
-  background: #fff3cd;
-  color: #856404;
-}
-
-.status-approved,
-.status-badge.status-approved {
-  background: #d4edda;
-  color: #155724;
-}
-
-.status-rejected,
-.status-badge.status-rejected {
-  background: #f8d7da;
-  color: #721c24;
-}
-
-.status-returned {
-  background: #ffe5e0;
-  color: #b23c17;
-}
-
-/* Notifications page list items */
-.notification-item-large {
-  display: flex;
-  align-items: flex-start;
-  gap: 15px;
-  padding: 16px 18px;
-  border-bottom: 1px solid #f1f3f5;
-  transition: background 0.2s ease, box-shadow 0.2s ease;
-}
-
-.notification-item-large.unread {
-  background: #f3f7ff;
-  border-left: 3px solid var(--psits-blue);
+.chart-wrapper canvas {
+    width: 100% !important;
+    height: 100% !important;
 }

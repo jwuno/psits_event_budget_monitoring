@@ -1,6 +1,6 @@
 <?php
 require_once '../../includes/auth.php';
-requireRole('president');
+requireRole('pio');
 
 require_once '../../config/db_connect.php';
 include '../../includes/header.php';
@@ -19,8 +19,8 @@ if (!$res || mysqli_num_rows($res) === 0) {
     ?>
     <div class="dashboard">
         <div class="card">
-            <h2>Proposal Not Found</h2>
-            <p>The requested proposal does not exist.</p>
+            <h2>Event Not Found</h2>
+            <p>The requested event does not exist or is not accessible.</p>
             <button type="button" class="btn btn-sm btn-primary" onclick="window.history.back();">
                 <i class="fa-solid fa-arrow-left"></i> Back
             </button>
@@ -33,79 +33,52 @@ if (!$res || mysqli_num_rows($res) === 0) {
 
 $proposal = mysqli_fetch_assoc($res);
 
-/* ---------- Handle POST (Approve / Return) ---------- */
+/* --------------------------
+   Handle POST: new announcement
+   -------------------------- */
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $remarks = mysqli_real_escape_string($conn, $_POST['president_remarks'] ?? '');
-    $now     = date('Y-m-d H:i:s');
-    $user    = mysqli_real_escape_string($conn, $_SESSION['username'] ?? 'president');
+    $title   = mysqli_real_escape_string($conn, $_POST['announce_title'] ?? '');
+    $content = mysqli_real_escape_string($conn, $_POST['announce_content'] ?? '');
+    $creator = mysqli_real_escape_string(
+        $conn,
+        $_SESSION['full_name'] ?? ($_SESSION['username'] ?? 'PIO')
+    );
 
-    if (isset($_POST['action_approve'])) {
-        // Approve & forward to Adviser
-        $status           = 'pending';
-        $current_stage    = 'adviser';
-        $president_status = 'approved';
-
-        $update = "
-            UPDATE proposals
-            SET
-                president_status  = '$president_status',
-                president_remarks = '$remarks',
-                status            = '$status',
-                current_stage     = '$current_stage',
-                returned_from     = NULL,
-                reviewed_by       = '$user',
-                review_date       = '$now'
-            WHERE id = $id
+    if ($title !== '' && $content !== '') {
+        $insert = "
+            INSERT INTO announcements (proposal_id, title, content, created_by)
+            VALUES ($id, '$title', '$content', '$creator')
         ";
 
-        if (mysqli_query($conn, $update)) {
-            $_SESSION['success'] = 'Proposal approved and forwarded to the Adviser.';
-            header('Location: dashboard.php');
+        if (mysqli_query($conn, $insert)) {
+            $_SESSION['success'] = 'Announcement created for this event.';
+            header('Location: view_proposal.php?id=' . $id);
             exit;
         } else {
-            $_SESSION['error'] = 'Error updating proposal: ' . mysqli_error($conn);
+            $_SESSION['error'] = 'Error creating announcement: ' . mysqli_error($conn);
         }
-
-    } elseif (isset($_POST['action_return'])) {
-        // Return to Treasurer
-        $status           = 'returned';
-        $current_stage    = 'treasurer';
-        $president_status = 'returned';
-        $returned_from    = 'president';
-
-        $update = "
-            UPDATE proposals
-            SET
-                president_status  = '$president_status',
-                president_remarks = '$remarks',
-                status            = '$status',
-                current_stage     = '$current_stage',
-                returned_from     = '$returned_from',
-                reviewed_by       = '$user',
-                review_date       = '$now'
-            WHERE id = $id
-        ";
-
-        if (mysqli_query($conn, $update)) {
-            $_SESSION['success'] = 'Proposal returned to the Treasurer with your remarks.';
-            header('Location: dashboard.php');
-            exit;
-        } else {
-            $_SESSION['error'] = 'Error updating proposal: ' . mysqli_error($conn);
-        }
+    } else {
+        $_SESSION['error'] = 'Please provide both a title and announcement content.';
     }
-
-    // If there was an error, reload the latest proposal data
-    $res = mysqli_query($conn, "SELECT * FROM proposals WHERE id = $id");
-    $proposal = mysqli_fetch_assoc($res);
 }
+
+// Fetch announcements for this proposal
+$annSql = "
+    SELECT *
+    FROM announcements
+    WHERE proposal_id = $id
+    ORDER BY created_at DESC
+";
+$annRes = mysqli_query($conn, $annSql);
+
 ?>
 
 <div class="dashboard">
     <div class="dashboard-header" style="display:flex;justify-content:space-between;align-items:center;gap:1rem;">
         <div>
-            <h1>President Review</h1>
-            <p>Review the event proposal endorsed by the Treasurer and decide whether to forward it to the Adviser.</p>
+            <h1>Event Details</h1>
+            <p>Use this information when preparing announcements and promotions.</p>
         </div>
 
         <button type="button" class="btn btn-sm" onclick="window.history.back();">
@@ -113,7 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </button>
     </div>
 
-    <!-- Status cards -->
+    <!-- Top summary -->
     <div class="card">
         <div class="stats-grid" style="margin-top:0;">
             <div class="stat-card">
@@ -123,25 +96,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </span>
             </div>
             <div class="stat-card">
-                <span class="stat-label">Current Stage</span>
+                <span class="stat-label">Event Date</span>
                 <span class="stat-value">
-                    <?php echo ucfirst(htmlspecialchars($proposal['current_stage'])); ?>
+                    <?php echo htmlspecialchars($proposal['event_date']); ?>
                 </span>
             </div>
             <div class="stat-card">
-                <span class="stat-label">Treasurer Status</span>
+                <span class="stat-label">Venue</span>
                 <span class="stat-value">
-                    <?php echo ucfirst(htmlspecialchars($proposal['treasurer_status'])); ?>
+                    <?php echo htmlspecialchars($proposal['venue']); ?>
                 </span>
             </div>
             <div class="stat-card">
-                <span class="stat-label">President Status</span>
-                <span class="stat-value">
-                    <?php echo ucfirst(htmlspecialchars($proposal['president_status'])); ?>
-                </span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-label">Proposed Budget</span>
+                <span class="stat-label">Budget</span>
                 <span class="stat-value">
                     ₱<?php echo number_format($proposal['proposed_budget'], 2); ?>
                 </span>
@@ -149,7 +116,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </div>
 
-    <!-- Event info -->
+    <!-- Event information -->
     <div class="card">
         <h2>Event Information</h2>
         <div class="table-wrapper">
@@ -160,12 +127,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <td><?php echo htmlspecialchars($proposal['title']); ?></td>
                     </tr>
                     <tr>
-                        <th>Event Date</th>
-                        <td><?php echo htmlspecialchars($proposal['event_date']); ?></td>
-                    </tr>
-                    <tr>
-                        <th>Venue</th>
-                        <td><?php echo htmlspecialchars($proposal['venue']); ?></td>
+                        <th>Description</th>
+                        <td style="white-space:pre-wrap;">
+                            <?php echo htmlspecialchars($proposal['description']); ?>
+                        </td>
                     </tr>
                     <tr>
                         <th>Expected Participants</th>
@@ -184,7 +149,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </div>
 
-    <!-- Budget + attachment -->
+    <!-- Budget & attachment -->
     <div class="card">
         <h2>Budget & Attachments</h2>
 
@@ -209,9 +174,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
     </div>
 
-    <!-- Previous remarks -->
+    <!-- Approval trail -->
     <div class="card">
-        <h2>Previous Remarks</h2>
+        <h2>Approval Trail</h2>
         <div class="table-wrapper">
             <table class="proposals-table">
                 <tbody>
@@ -221,6 +186,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <?php
                             echo ($proposal['treasurer_remarks'] !== null && $proposal['treasurer_remarks'] !== '')
                                 ? nl2br(htmlspecialchars($proposal['treasurer_remarks']))
+                                : 'None.';
+                            ?>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>President Remarks</th>
+                        <td>
+                            <?php
+                            echo ($proposal['president_remarks'] !== null && $proposal['president_remarks'] !== '')
+                                ? nl2br(htmlspecialchars($proposal['president_remarks']))
                                 : 'None.';
                             ?>
                         </td>
@@ -240,27 +215,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </div>
 
-    <!-- President decision form -->
+    <!-- Create announcement -->
     <div class="card">
-        <h2>Your Decision</h2>
-        <form action="review_proposal.php?id=<?php echo $id; ?>" method="post">
+        <h2>Create Announcement for Students</h2>
+        <form action="view_proposal.php?id=<?php echo $id; ?>" method="post">
             <div class="form-group">
-                <label for="president_remarks">President Remarks / Justification</label>
-                <textarea id="president_remarks" name="president_remarks" rows="4"
-                          placeholder="Write your decision, conditions, or recommendations."><?php
-                    echo htmlspecialchars($proposal['president_remarks']);
-                ?></textarea>
+                <label for="announce_title">Announcement Title</label>
+                <input type="text" id="announce_title" name="announce_title"
+                       value="<?php echo 'Upcoming Event: ' . htmlspecialchars($proposal['title']); ?>" required>
             </div>
 
-            <div style="margin-top:1rem;display:flex;justify-content:flex-end;gap:0.5rem;flex-wrap:wrap;">
-                <button type="submit" name="action_return" class="btn btn-sm">
-                    <i class="fa-solid fa-rotate-left"></i> Return to Treasurer
-                </button>
-                <button type="submit" name="action_approve" class="btn btn-sm btn-primary">
-                    <i class="fa-solid fa-check"></i> Approve &amp; Forward to Adviser
+            <div class="form-group">
+                <label for="announce_content">Announcement Content</label>
+                <textarea id="announce_content" name="announce_content" rows="4" required
+                          placeholder="Example: Join us for [event name] on [date] at [venue]..."></textarea>
+            </div>
+
+            <div style="margin-top:1rem;display:flex;justify-content:flex-end;">
+                <button type="submit" class="btn btn-sm btn-primary">
+                    <i class="fa-solid fa-bullhorn"></i> Publish Announcement
                 </button>
             </div>
         </form>
+    </div>
+
+    <!-- Existing announcements for this event -->
+    <div class="card">
+        <h2>Announcements Linked to This Event</h2>
+        <?php if (!$annRes || mysqli_num_rows($annRes) === 0): ?>
+            <p style="margin-top:0.5rem;color:#6b7280;">
+                No announcements have been created yet for this event.
+            </p>
+        <?php else: ?>
+            <div class="table-wrapper">
+                <table class="proposals-table">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Content</th>
+                            <th>Posted By</th>
+                            <th>Posted On</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php while ($a = mysqli_fetch_assoc($annRes)): ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($a['title']); ?></td>
+                                <td style="white-space:pre-wrap;"><?php echo htmlspecialchars($a['content']); ?></td>
+                                <td><?php echo htmlspecialchars($a['created_by']); ?></td>
+                                <td><?php echo htmlspecialchars($a['created_at']); ?></td>
+                            </tr>
+                        <?php endwhile; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php endif; ?>
     </div>
 </div>
 

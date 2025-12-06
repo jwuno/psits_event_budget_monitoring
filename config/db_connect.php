@@ -1,8 +1,8 @@
 <?php
 $servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "psits_event_budget_monitoring";
+$username   = "root";
+$password   = "";
+$dbname     = "psits_portal_fresh";  // 🔁 UPDATED
 
 $conn = new mysqli($servername, $username, $password, $dbname);
 

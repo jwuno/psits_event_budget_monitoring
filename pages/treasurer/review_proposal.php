@@ -1,329 +1,325 @@
 <?php
-// ================== ACCESS CONTROL & SETUP ==================
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
-if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'treasurer') {
-    $_SESSION['error'] = "Access denied!";
-    header("Location: ../../index.php");
-    exit;
-}
+require_once '../../includes/auth.php';
+requireRole('treasurer');
 
 require_once '../../config/db_connect.php';
-require_once '../../includes/functions.php';
+include '../../includes/header.php';
 
-// Get proposal ID
-$proposal_id = isset($_GET['id']) ? mysqli_real_escape_string($conn, $_GET['id']) : null;
-
-if (!$proposal_id) {
-    $_SESSION['error'] = "No proposal specified!";
-    header("Location: pending_reviews.php");
+$id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+if ($id <= 0) {
+    header('Location: dashboard.php');
     exit;
 }
 
-// Basic info for notifications
-$info_sql = "SELECT title, created_by FROM proposals WHERE id = '$proposal_id'";
-$info_res = mysqli_query($conn, $info_sql);
-$info     = mysqli_fetch_assoc($info_res);
-$prop_title   = $info['title'] ?? 'an event';
-$prop_creator = $info['created_by'] ?? 'the secretary';
+// Fetch proposal
+$sql = "SELECT * FROM proposals WHERE id = $id";
+$res = mysqli_query($conn, $sql);
 
-// ================== HANDLE ACTIONS (APPROVE / RETURN) ==================
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
-    $action = $_POST['action'];
+if (!$res || mysqli_num_rows($res) === 0) {
+    ?>
+    <div class="dashboard">
+        <div class="card">
+            <h2>Proposal Not Found</h2>
+            <p>The requested proposal does not exist.</p>
+            <button type="button" class="btn btn-sm btn-primary" onclick="window.history.back();">
+                <i class="fa-solid fa-arrow-left"></i> Back
+            </button>
+        </div>
+    </div>
+    <?php
+    include '../../includes/footer.php';
+    exit;
+}
 
-    if ($action === 'approve') {
-        // Treasurer approves & forwards to President
-        $adjusted_budget = mysqli_real_escape_string($conn, $_POST['adjusted_budget']);
-        $budget_notes    = mysqli_real_escape_string($conn, $_POST['budget_notes']);
+$proposal = mysqli_fetch_assoc($res);
 
-        $update_sql = "UPDATE proposals SET 
-                status                = 'pending',
-                current_stage         = 'president',
-                treasurer_status      = 'approved',
-                treasurer_remarks     = '$budget_notes',
-                treasurer_reviewed_at = NOW(),
-                proposed_budget       = '$adjusted_budget',
-                budget_notes          = '$budget_notes',
-                returned_from         = NULL,
-                reviewed_by           = '{$_SESSION['full_name']}',
-                review_date           = NOW()
-            WHERE id = '$proposal_id'";
+/**
+ * Treasurer can edit certain fields ONLY when:
+ *   - it is currently at Treasurer stage
+ *   - AND status is "returned"
+ *   - AND it was returned by the President
+ */
+$isEditable =
+    $proposal['current_stage'] === 'treasurer' &&
+    $proposal['status'] === 'returned' &&
+    $proposal['returned_from'] === 'president';
 
-        if (mysqli_query($conn, $update_sql)) {
-            $by = $_SESSION['full_name'] ?? 'Treasurer';
+/* ---------- Handle POST (Approve / Return) ---------- */
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $remarks = mysqli_real_escape_string($conn, $_POST['treasurer_remarks'] ?? '');
+    $now     = date('Y-m-d H:i:s');
+    $user    = mysqli_real_escape_string($conn, $_SESSION['username'] ?? 'treasurer');
 
-            // Notify President
-            $msg_pres = "Proposal \"$prop_title\" was approved by $by and is ready for your review.";
-            addNotification($conn, 'president', $msg_pres, $by);
+    // Start with existing values
+    $newBudget              = (float)$proposal['proposed_budget'];
+    $newParticipants        = (int)$proposal['expected_participants'];
+    $newBudgetBreakdownRaw  = $proposal['budget_breakdown'];
 
-            // Notify Secretary
-            $msg_sec = "Your proposal \"$prop_title\" passed the Treasurer review and is now with the President.";
-            addNotification($conn, 'secretary', $msg_sec, $by);
-
-            $_SESSION['success'] = 'Proposal forwarded to President for approval.';
-        } else {
-            $_SESSION['error'] = 'Error updating proposal: ' . mysqli_error($conn);
+    if ($isEditable) {
+        if (isset($_POST['proposed_budget'])) {
+            $newBudget = (float)$_POST['proposed_budget'];
         }
-
-        header("Location: pending_reviews.php");
-        exit;
-
-    } elseif ($action === 'reject') {
-        // Treasurer returns to Secretary
-        $rejection_reason = mysqli_real_escape_string($conn, $_POST['rejection_reason']);
-
-        $update_sql = "UPDATE proposals SET 
-                status                = 'returned',
-                current_stage         = 'secretary',
-                treasurer_status      = 'rejected',
-                treasurer_remarks     = '$rejection_reason',
-                treasurer_reviewed_at = NOW(),
-                rejection_reason      = '$rejection_reason',
-                reviewed_by           = '{$_SESSION['full_name']}',
-                review_date           = NOW()
-            WHERE id = '$proposal_id'";
-
-        if (mysqli_query($conn, $update_sql)) {
-            $by  = $_SESSION['full_name'] ?? 'Treasurer';
-            $msg = "Your proposal \"$prop_title\" was returned by $by for budget adjustments.";
-            addNotification($conn, 'secretary', $msg, $by);
-
-            $_SESSION['success'] = 'Proposal returned to Secretary for adjustment.';
-        } else {
-            $_SESSION['error'] = 'Error updating proposal: ' . mysqli_error($conn);
+        if (isset($_POST['expected_participants'])) {
+            $newParticipants = (int)$_POST['expected_participants'];
         }
-
-        header("Location: pending_reviews.php");
-        exit;
+        if (isset($_POST['budget_breakdown'])) {
+            $newBudgetBreakdownRaw = $_POST['budget_breakdown'];
+        }
     }
+
+    $newBudgetBreakdown = mysqli_real_escape_string($conn, $newBudgetBreakdownRaw);
+
+    if (isset($_POST['action_approve'])) {
+        // Approve & forward to President
+        $status           = 'pending';
+        $current_stage    = 'president';
+        $treasurer_status = 'approved';
+
+        $update = "
+            UPDATE proposals
+            SET
+                treasurer_status     = '$treasurer_status',
+                treasurer_remarks    = '$remarks',
+                status               = '$status',
+                current_stage        = '$current_stage',
+                returned_from        = NULL,
+                reviewed_by          = '$user',
+                review_date          = '$now',
+                proposed_budget      = $newBudget,
+                expected_participants= $newParticipants,
+                budget_breakdown     = '$newBudgetBreakdown'
+            WHERE id = $id
+        ";
+
+        if (mysqli_query($conn, $update)) {
+            $_SESSION['success'] = 'Proposal updated and forwarded to the President.';
+            header('Location: dashboard.php');
+            exit;
+        } else {
+            $_SESSION['error'] = 'Error updating proposal: ' . mysqli_error($conn);
+        }
+
+    } elseif (isset($_POST['action_return'])) {
+        // Return to Secretary
+        $status           = 'returned';
+        $current_stage    = 'secretary';
+        $treasurer_status = 'returned';
+        $returned_from    = 'treasurer';
+
+        $update = "
+            UPDATE proposals
+            SET
+                treasurer_status     = '$treasurer_status',
+                treasurer_remarks    = '$remarks',
+                status               = '$status',
+                current_stage        = '$current_stage',
+                returned_from        = '$returned_from',
+                reviewed_by          = '$user',
+                review_date          = '$now',
+                proposed_budget      = $newBudget,
+                expected_participants= $newParticipants,
+                budget_breakdown     = '$newBudgetBreakdown'
+            WHERE id = $id
+        ";
+
+        if (mysqli_query($conn, $update)) {
+            $_SESSION['success'] = 'Proposal updated and returned to the Secretary with your remarks.';
+            header('Location: dashboard.php');
+            exit;
+        } else {
+            $_SESSION['error'] = 'Error updating proposal: ' . mysqli_error($conn);
+        }
+    }
+
+    // If there was an error, reload the latest proposal data
+    $res = mysqli_query($conn, "SELECT * FROM proposals WHERE id = $id");
+    $proposal = mysqli_fetch_assoc($res);
+    $isEditable =
+        $proposal['current_stage'] === 'treasurer' &&
+        $proposal['status'] === 'returned' &&
+        $proposal['returned_from'] === 'president';
 }
-
-// ================== FETCH PROPOSAL FOR DISPLAY ==================
-$proposal_sql    = "SELECT * FROM proposals WHERE id = '$proposal_id'";
-$proposal_result = mysqli_query($conn, $proposal_sql);
-$proposal        = mysqli_fetch_assoc($proposal_result);
-
-if (!$proposal) {
-    $_SESSION['error'] = "Proposal not found!";
-    header("Location: pending_reviews.php");
-    exit;
-}
-
-// Can Treasurer act? (new OR returned by President)
-$can_act = ($proposal['current_stage'] === 'treasurer' 
-            && in_array($proposal['status'], ['pending', 'returned']));
-
-include('../../includes/header.php');
 ?>
 
-<div class="dashboard-container">
-    <div class="dashboard-header">
-        <div class="header-content">
-            <h1>Review Proposal (Treasurer)</h1>
-            <p>Review and adjust the event budget before passing it to the President.</p>
+<div class="dashboard">
+    <div class="dashboard-header" style="display:flex;justify-content:space-between;align-items:center;gap:1rem;">
+        <div>
+            <h1>Treasurer Review</h1>
+            <p>Review and decide on the event budget before endorsing it to the President.</p>
         </div>
-        <div class="header-actions">
-            <a href="pending_reviews.php" class="btn-back">← Back to Pending Reviews</a>
-        </div>
+
+        <button type="button" class="btn btn-sm" onclick="window.history.back();">
+            <i class="fa-solid fa-arrow-left"></i> Back
+        </button>
     </div>
 
-    <?php if (!empty($_SESSION['success'])): ?>
-        <div class="alert alert-success"><?php echo $_SESSION['success']; unset($_SESSION['success']); ?></div>
-    <?php endif; ?>
-    <?php if (!empty($_SESSION['error'])): ?>
-        <div class="alert alert-error"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
-    <?php endif; ?>
-
-    <div class="proposal-detail">
-        <div class="proposal-card">
-            <div class="proposal-header">
-                <h3><?php echo htmlspecialchars($proposal['title']); ?></h3>
-                <span class="status-badge status-<?php echo strtolower($proposal['status']); ?>">
-                    <?php echo ucfirst($proposal['status']); ?>
-                    (<?php echo ucfirst($proposal['current_stage']); ?>)
+    <!-- Status cards -->
+    <div class="card">
+        <div class="stats-grid" style="margin-top:0;">
+            <div class="stat-card">
+                <span class="stat-label">Overall Status</span>
+                <span class="stat-value">
+                    <?php echo ucfirst(htmlspecialchars($proposal['status'])); ?>
                 </span>
             </div>
+            <div class="stat-card">
+                <span class="stat-label">Current Stage</span>
+                <span class="stat-value">
+                    <?php echo ucfirst(htmlspecialchars($proposal['current_stage'])); ?>
+                </span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Treasurer Status</span>
+                <span class="stat-value">
+                    <?php echo ucfirst(htmlspecialchars($proposal['treasurer_status'])); ?>
+                </span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Proposed Budget</span>
+                <span class="stat-value">
+                    ₱<?php echo number_format($proposal['proposed_budget'], 2); ?>
+                </span>
+            </div>
+        </div>
+    </div>
 
-            <div class="proposal-details">
-                <div class="detail-item">
-                    <strong>Event Date:</strong>
-                    <span><?php echo date('M j, Y', strtotime($proposal['event_date'])); ?></span>
-                </div>
-                <div class="detail-item">
-                    <strong>Venue:</strong>
-                    <span><?php echo htmlspecialchars($proposal['venue']); ?></span>
-                </div>
-                <div class="detail-item">
-                    <strong>Participants:</strong>
-                    <span><?php echo (int)$proposal['expected_participants']; ?> students</span>
-                </div>
-                <div class="detail-item">
-                    <strong>Proposed Budget:</strong>
-                    <span class="budget-amount">₱<?php echo number_format($proposal['proposed_budget'], 2); ?></span>
-                </div>
-                <div class="detail-item">
-                    <strong>Created by:</strong>
-                    <span><?php echo htmlspecialchars($proposal['created_by']); ?></span>
-                </div>
+    <!-- Single form for all editable fields -->
+    <form action="review_proposal.php?id=<?php echo $id; ?>" method="post">
+        <!-- Event info (participants editable when returned by President) -->
+        <div class="card">
+            <h2>Event Information</h2>
+            <div class="table-wrapper">
+                <table class="proposals-table">
+                    <tbody>
+                        <tr>
+                            <th style="width:220px;">Event Title</th>
+                            <td><?php echo htmlspecialchars($proposal['title']); ?></td>
+                        </tr>
+                        <tr>
+                            <th>Event Date</th>
+                            <td><?php echo htmlspecialchars($proposal['event_date']); ?></td>
+                        </tr>
+                        <tr>
+                            <th>Venue</th>
+                            <td><?php echo htmlspecialchars($proposal['venue']); ?></td>
+                        </tr>
+                        <tr>
+                            <th>Expected Participants</th>
+                            <td>
+                                <?php if ($isEditable): ?>
+                                    <input
+                                        type="number"
+                                        id="expected_participants"
+                                        name="expected_participants"
+                                        min="1"
+                                        value="<?php echo (int)$proposal['expected_participants']; ?>"
+                                    >
+                                    <p style="font-size:0.8rem;color:#6b7280;margin-top:0.25rem;">
+                                        Editable because this proposal was returned by the President for adjustment.
+                                    </p>
+                                <?php else: ?>
+                                    <?php echo (int)$proposal['expected_participants']; ?>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Prepared By</th>
+                            <td><?php echo htmlspecialchars($proposal['created_by']); ?></td>
+                        </tr>
+                        <tr>
+                            <th>Date Submitted</th>
+                            <td><?php echo htmlspecialchars($proposal['date_submitted']); ?></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Budget + attachment -->
+        <div class="card">
+            <h2>Budget & Attachments</h2>
+
+            <div class="form-group">
+                <label for="proposed_budget">Proposed Budget (₱)</label>
+                <?php if ($isEditable): ?>
+                    <input
+                        type="number"
+                        step="0.01"
+                        id="proposed_budget"
+                        name="proposed_budget"
+                        value="<?php echo htmlspecialchars($proposal['proposed_budget']); ?>"
+                    >
+                <?php else: ?>
+                    <div class="readonly-field">
+                        ₱<?php echo number_format($proposal['proposed_budget'], 2); ?>
+                    </div>
+                <?php endif; ?>
             </div>
 
-            <?php if (!empty($proposal['budget_breakdown'])): ?>
-                <div class="detail-section">
-                    <h3>Budget Breakdown</h3>
-                    <p><?php echo nl2br(htmlspecialchars($proposal['budget_breakdown'])); ?></p>
-                </div>
-            <?php endif; ?>
-
-            <?php if (!empty($proposal['objectives'])): ?>
-                <div class="detail-section">
-                    <h3>Objectives</h3>
-                    <p><?php echo nl2br(htmlspecialchars($proposal['objectives'])); ?></p>
-                </div>
-            <?php endif; ?>
-
-            <?php if (!empty($proposal['activities'])): ?>
-                <div class="detail-section">
-                    <h3>Activities</h3>
-                    <p><?php echo nl2br(htmlspecialchars($proposal['activities'])); ?></p>
-                </div>
-            <?php endif; ?>
-
-            <?php if (!empty($proposal['expected_outcomes'])): ?>
-                <div class="detail-section">
-                    <h3>Expected Outcomes</h3>
-                    <p><?php echo nl2br(htmlspecialchars($proposal['expected_outcomes'])); ?></p>
-                </div>
-            <?php endif; ?>
-
-            <?php if (!empty($proposal['description'])): ?>
-                <div class="detail-section">
-                    <h3>Description</h3>
-                    <p><?php echo nl2br(htmlspecialchars($proposal['description'])); ?></p>
-                </div>
-            <?php endif; ?>
-
-            <?php if (!empty($proposal['president_remarks'])): ?>
-                <div class="detail-section">
-                    <h3>President Remarks</h3>
-                    <p><?php echo nl2br(htmlspecialchars($proposal['president_remarks'])); ?></p>
-                </div>
-            <?php endif; ?>
-
-            <?php if (!empty($proposal['treasurer_remarks'])): ?>
-                <div class="detail-section">
-                    <h3>Your Previous Remarks</h3>
-                    <p><?php echo nl2br(htmlspecialchars($proposal['treasurer_remarks'])); ?></p>
-                </div>
-            <?php endif; ?>
+            <div class="form-group">
+                <label for="budget_breakdown">Budget Breakdown</label>
+                <?php if ($isEditable): ?>
+                    <textarea id="budget_breakdown" name="budget_breakdown" rows="4"><?php
+                        echo htmlspecialchars($proposal['budget_breakdown']);
+                    ?></textarea>
+                <?php else: ?>
+                    <p style="white-space:pre-wrap;margin-top:0.25rem;">
+                        <?php
+                        echo ($proposal['budget_breakdown'] !== null && $proposal['budget_breakdown'] !== '')
+                            ? htmlspecialchars($proposal['budget_breakdown'])
+                            : 'No budget breakdown provided.';
+                        ?>
+                    </p>
+                <?php endif; ?>
+            </div>
 
             <?php if (!empty($proposal['attachment_path'])): ?>
-                <div class="detail-section">
-                    <h3>Attachment</h3>
-                    <a href="../../uploads/<?php echo htmlspecialchars($proposal['attachment_path']); ?>" 
-                       class="btn-download" target="_blank">
-                        View Attachment
-                    </a>
+                <div class="form-group">
+                    <label>Attachment</label>
+                    <p>
+                        <a class="btn btn-sm btn-primary"
+                           href="<?php echo '../../' . htmlspecialchars($proposal['attachment_path']); ?>"
+                           target="_blank">
+                            <i class="fa-solid fa-file-arrow-down"></i> View / Download Attachment
+                        </a>
+                    </p>
                 </div>
             <?php endif; ?>
         </div>
 
-        <?php if ($can_act): ?>
-            <div class="action-card">
-                <?php if ($proposal['status'] === 'returned' && $proposal['returned_from'] === 'president'): ?>
-                    <h3>Adjust Budget & Forward Back to President</h3>
-                    <p>This proposal was returned by the President. Adjust the budget based on the remarks, then send it back.</p>
+        <!-- Previous higher-level remarks -->
+        <div class="card">
+            <h2>President Remarks</h2>
+            <p style="white-space:pre-wrap;margin-top:0.25rem;">
+                <?php
+                echo ($proposal['president_remarks'] !== null && $proposal['president_remarks'] !== '')
+                    ? htmlspecialchars($proposal['president_remarks'])
+                    : 'None.';
+                ?>
+            </p>
+        </div>
 
-                    <form method="POST" action="" class="action-form">
-                        <input type="hidden" name="action" value="approve">
-
-                        <div class="form-group">
-                            <label for="adjusted_budget">Adjusted Budget Amount:</label>
-                            <input type="number" id="adjusted_budget" name="adjusted_budget"
-                                   value="<?php echo $proposal['proposed_budget']; ?>" step="0.01" min="0" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="budget_notes">Treasurer Notes (for President):</label>
-                            <textarea id="budget_notes" name="budget_notes"
-                                      placeholder="Explain any adjustments you made based on the President's remarks..."><?php 
-                                      echo htmlspecialchars($proposal['treasurer_remarks'] ?? ''); ?></textarea>
-                        </div>
-
-                        <div class="form-actions">
-                            <button type="submit" class="btn btn-approve-large"
-                                    onclick="return confirm('Forward this adjusted proposal back to the President?');">
-                                Forward Adjusted Budget to President
-                            </button>
-                        </div>
-                    </form>
-
-                <?php else: ?>
-                    <h3>Budget Review & Action</h3>
-
-                    <!-- Approve & Forward to President -->
-                    <form method="POST" action="" class="action-form">
-                        <input type="hidden" name="action" value="approve">
-
-                        <div class="form-group">
-                            <label for="adjusted_budget">Adjusted Budget Amount:</label>
-                            <input type="number" id="adjusted_budget" name="adjusted_budget"
-                                   value="<?php echo $proposal['proposed_budget']; ?>" step="0.01" min="0" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="budget_notes">Budget Notes (Optional):</label>
-                            <textarea id="budget_notes" name="budget_notes"
-                                      placeholder="Explain your budget decision or conditions..."><?php 
-                                      echo htmlspecialchars($proposal['treasurer_remarks'] ?? ''); ?></textarea>
-                        </div>
-
-                        <div class="form-actions">
-                            <button type="submit" class="btn btn-approve-large"
-                                    onclick="return confirm('Approve this proposal and forward to the President?');">
-                                Approve &amp; Forward to President
-                            </button>
-                        </div>
-                    </form>
-
-                    <!-- Return to Secretary -->
-                    <form method="POST" action="" class="reject-form">
-                        <input type="hidden" name="action" value="reject">
-
-                        <div class="form-group">
-                            <label for="rejection_reason">Reason for Returning to Secretary:</label>
-                            <textarea id="rejection_reason" name="rejection_reason"
-                                      placeholder="Explain why this proposal needs adjustment..."
-                                      required rows="4"><?php 
-                                      echo htmlspecialchars($proposal['treasurer_remarks'] ?? ''); ?></textarea>
-                        </div>
-
-                        <div class="form-actions">
-                            <button type="submit" class="btn btn-reject-large"
-                                    onclick="return confirm('Return this proposal to the Secretary for adjustment?');">
-                                Return to Secretary
-                            </button>
-                        </div>
-                    </form>
-                <?php endif; ?>
+        <!-- Treasurer remarks + actions -->
+        <div class="card">
+            <h2>Your Decision</h2>
+            <div class="form-group">
+                <label for="treasurer_remarks">Treasurer Remarks / Justification</label>
+                <textarea id="treasurer_remarks" name="treasurer_remarks" rows="4"
+                          placeholder="Write your comments, adjustments made, or basis for approval."><?php
+                    echo htmlspecialchars($proposal['treasurer_remarks']);
+                ?></textarea>
             </div>
-        <?php else: ?>
-            <div class="detail-card">
-                <h3>Review Summary</h3>
-                <p><strong>Status:</strong> <?php echo ucfirst($proposal['status']); ?></p>
-                <?php if (!empty($proposal['reviewed_by'])): ?>
-                    <p><strong>Last Reviewed by:</strong> <?php echo htmlspecialchars($proposal['reviewed_by']); ?></p>
-                <?php endif; ?>
-                <?php if (!empty($proposal['review_date']) && $proposal['review_date'] !== '0000-00-00 00:00:00'): ?>
-                    <p><strong>Review Date:</strong> <?php echo date('M j, Y g:i A', strtotime($proposal['review_date'])); ?></p>
-                <?php endif; ?>
-                <?php if (!empty($proposal['treasurer_remarks'])): ?>
-                    <p><strong>Treasurer Remarks:</strong> <?php echo nl2br(htmlspecialchars($proposal['treasurer_remarks'])); ?></p>
-                <?php endif; ?>
+
+            <div style="margin-top:1rem;display:flex;justify-content:flex-end;gap:0.5rem;flex-wrap:wrap;">
+                <button type="submit" name="action_return" class="btn btn-sm">
+                    <i class="fa-solid fa-rotate-left"></i> Return to Secretary
+                </button>
+                <button type="submit" name="action_approve" class="btn btn-sm btn-primary">
+                    <i class="fa-solid fa-check"></i> Approve &amp; Forward to President
+                </button>
             </div>
-        <?php endif; ?>
-    </div>
+        </div>
+    </form>
 </div>
 
-<?php include('../../includes/footer.php'); ?>
+<?php include '../../includes/footer.php'; ?>
