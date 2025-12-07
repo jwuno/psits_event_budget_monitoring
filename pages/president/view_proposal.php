@@ -4,7 +4,7 @@
 require_once '../../includes/auth.php';
 requireRole('president');
 
-require_once '../../db_connect.php';
+require_once '../../config/db_connect.php';
 include '../../includes/header.php';
 
 if (!isset($_GET['id']) || !ctype_digit($_GET['id'])) {
@@ -56,22 +56,54 @@ function formatStatusBadge($status) {
 
     return '<span class="' . $class . '">' . $label . '</span>';
 }
+
+function formatEventSchedule($proposal) {
+    $start  = $proposal['event_start_date'] ?? '';
+    $end    = $proposal['event_end_date'] ?? '';
+    $single = $proposal['event_date'] ?? '';
+
+    if (empty($start) && !empty($single)) {
+        return date('F j, Y', strtotime($single));
+    }
+
+    if (empty($start)) {
+        return 'Not set';
+    }
+
+    if (empty($end) || $end === $start) {
+        return date('F j, Y', strtotime($start));
+    }
+
+    $startTs = strtotime($start);
+    $endTs   = strtotime($end);
+
+    if ($startTs === false || $endTs === false) {
+        return e($start) . ' - ' . e($end);
+    }
+
+    if (date('Y', $startTs) === date('Y', $endTs)) {
+        if (date('m', $startTs) === date('m', $endTs)) {
+            return date('F j', $startTs) . '–' . date('j, Y', $endTs);
+        }
+        return date('F j', $startTs) . ' – ' . date('F j, Y', $endTs);
+    }
+
+    return date('F j, Y', $startTs) . ' – ' . date('F j, Y', $endTs);
+}
+
+$eventSchedule = formatEventSchedule($proposal);
 ?>
+
 <div class="dashboard">
     <div class="dashboard-header">
         <div>
             <h1>View Proposal</h1>
-            <p>Review and validate the Treasurer-endorsed proposal.</p>
+            <p>Review the full details of this event and its approval status.</p>
         </div>
+
         <div class="page-actions">
-            <a href="pending_proposals.php" class="btn btn-outline btn-sm">
-                ← Back to Pending Proposals
-            </a>
-            <a href="../shared/print_proposal.php?id=<?php echo $proposal['id']; ?>"
-               target="_blank"
-               class="btn btn-outline btn-sm">
-                <i class="fa-solid fa-print"></i>
-                Print Proposal
+            <a href="dashboard.php" class="btn btn-outline btn-sm">
+                ← Back to Dashboard
             </a>
         </div>
     </div>
@@ -92,8 +124,8 @@ function formatStatusBadge($status) {
                 <table class="proposals-table">
                     <tbody>
                         <tr>
-                            <th style="width:200px;">Event Date</th>
-                            <td><?php echo e($proposal['event_date']); ?></td>
+                            <th style="width:220px;">Event Schedule</th>
+                            <td><?php echo e($eventSchedule); ?></td>
                         </tr>
                         <tr>
                             <th>Venue</th>
@@ -101,7 +133,12 @@ function formatStatusBadge($status) {
                         </tr>
                         <tr>
                             <th>Target Participants</th>
-                            <td><?php echo e($proposal['participants'] ?? 'N/A'); ?></td>
+                            <td>
+                                <?php
+                                    $exp = $proposal['expected_participants'] ?? null;
+                                    echo $exp !== null && $exp !== '' ? e($exp) : 'N/A';
+                                ?>
+                            </td>
                         </tr>
                         <tr>
                             <th>Proposed Budget</th>
@@ -117,33 +154,18 @@ function formatStatusBadge($status) {
         </div>
     </div>
 
-    <div class="grid-2">
-        <?php if (!empty($proposal['description'])): ?>
-            <div class="card">
-                <div class="card-header">
-                    <h2>Event Description / Rationale</h2>
-                </div>
-                <div class="card-body">
-                    <p style="font-size:0.9rem;white-space:pre-wrap;">
-                        <?php echo e($proposal['description']); ?>
-                    </p>
-                </div>
+    <?php if (!empty($proposal['description'])): ?>
+        <div class="card">
+            <div class="card-header">
+                <h2>Event Description / Rationale</h2>
             </div>
-        <?php endif; ?>
-
-        <?php if (!empty($proposal['objectives'])): ?>
-            <div class="card">
-                <div class="card-header">
-                    <h2>Objectives</h2>
-                </div>
-                <div class="card-body">
-                    <p style="font-size:0.9rem;white-space:pre-wrap;">
-                        <?php echo e($proposal['objectives']); ?>
-                    </p>
-                </div>
+            <div class="card-body">
+                <p style="font-size:0.9rem;white-space:pre-wrap;">
+                    <?php echo e($proposal['description']); ?>
+                </p>
             </div>
-        <?php endif; ?>
-    </div>
+        </div>
+    <?php endif; ?>
 
     <div class="card">
         <div class="card-header">

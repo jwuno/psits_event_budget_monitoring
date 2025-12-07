@@ -59,7 +59,55 @@ function formatStatusBadge($status) {
     return '<span class="' . $class . '">' . $label . '</span>';
 }
 
+/**
+ * Format event schedule based on start/end dates.
+ * Uses event_start_date and event_end_date; falls back to event_date if needed.
+ */
+function formatEventSchedule($proposal) {
+    $start = $proposal['event_start_date'] ?? '';
+    $end   = $proposal['event_end_date'] ?? '';
+    $single = $proposal['event_date'] ?? '';
+
+    // If no start date but we have event_date, just show that
+    if (empty($start) && !empty($single)) {
+        return date('F j, Y', strtotime($single));
+    }
+
+    if (empty($start)) {
+        return 'Not set';
+    }
+
+    // If no end date or same as start → one-day event
+    if (empty($end) || $end === $start) {
+        return date('F j, Y', strtotime($start));
+    }
+
+    $startTs = strtotime($start);
+    $endTs   = strtotime($end);
+
+    if ($startTs === false || $endTs === false) {
+        // Fallback raw display
+        return e($start) . ' - ' . e($end);
+    }
+
+    // Same year?
+    if (date('Y', $startTs) === date('Y', $endTs)) {
+        // Same month and year → December 10–13, 2025
+        if (date('m', $startTs) === date('m', $endTs)) {
+            return date('F j', $startTs) . '–' . date('j, Y', $endTs);
+        }
+
+        // Different month but same year → Dec 29, 2025 – Jan 3, 2025
+        return date('F j', $startTs) . ' – ' . date('F j, Y', $endTs);
+    }
+
+    // Different year → include full dates both sides
+    return date('F j, Y', $startTs) . ' – ' . date('F j, Y', $endTs);
+}
+
+$eventSchedule = formatEventSchedule($proposal);
 ?>
+
 <div class="dashboard">
     <!-- Page header -->
     <div class="dashboard-header">
@@ -73,7 +121,7 @@ function formatStatusBadge($status) {
                 ← Back to Dashboard
             </a>
 
-            <!-- 🔹 PRINT BUTTON HERE -->
+            <!-- 🔹 PRINT BUTTON -->
             <a href="../shared/print_proposal.php?id=<?php echo $proposal['id']; ?>"
                target="_blank"
                class="btn btn-outline btn-sm">
@@ -100,8 +148,8 @@ function formatStatusBadge($status) {
                 <table class="proposals-table">
                     <tbody>
                         <tr>
-                            <th style="width:200px;">Event Date</th>
-                            <td><?php echo e($proposal['event_date']); ?></td>
+                            <th style="width:220px;">Event Schedule</th>
+                            <td><?php echo e($eventSchedule); ?></td>
                         </tr>
                         <tr>
                             <th>Venue</th>
@@ -109,7 +157,12 @@ function formatStatusBadge($status) {
                         </tr>
                         <tr>
                             <th>Target Participants</th>
-                            <td><?php echo e($proposal['participants'] ?? 'N/A'); ?></td>
+                            <td>
+                                <?php
+                                    $exp = $proposal['expected_participants'] ?? null;
+                                    echo $exp !== null && $exp !== '' ? e($exp) : 'N/A';
+                                ?>
+                            </td>
                         </tr>
                         <tr>
                             <th>Proposed Budget</th>

@@ -219,7 +219,14 @@ img {
     box-shadow: var(--shadow-card);
     position: relative;
     overflow: hidden;
+
+    /* NEW: make all top cards same height & nicely aligned */
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }
+
 
 .stat-card::before {
     content: "";
@@ -279,8 +286,28 @@ img {
     margin-top: 1.25rem;
 }
 
+/* make cards in charts-grid equal height */
+.charts-grid > .card {
+    display: flex;
+    flex-direction: column;
+}
+
+/* table-scroll inside those cards fills available height */
+.charts-grid > .card .table-wrapper.table-scroll {
+    flex: 1;
+}
+
+/* Student 2-column layout */
+.cards-grid-2 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.25rem;
+    margin-top: 1.25rem;
+}
+
 /* canvas responsive */
-.charts-grid canvas {
+.charts-grid canvas,
+.cards-grid-2 canvas {
     width: 100% !important;
     max-height: 280px;
 }
@@ -367,6 +394,24 @@ img {
 .btn-sm {
     padding: 0.35rem 0.8rem;
     font-size: 0.8rem;
+}
+
+/* light pill button (student "View") */
+.btn-light-pill {
+    display:inline-block;
+    padding:0.35rem 1.4rem;
+    border-radius:999px;
+    background-color:#f3f4f6;
+    color:#1e293b;
+    font-size:0.9rem;
+    font-weight:500;
+    text-decoration:none;
+    border:none;
+    transition:background-color 0.15s ease, transform 0.1s ease;
+}
+.btn-light-pill:hover {
+    background-color:#e5e7eb;
+    transform:translateY(-1px);
 }
 
 /* =========================================
@@ -462,4 +507,110 @@ img {
 .chart-wrapper canvas {
     width: 100% !important;
     height: 100% !important;
+}
+
+/* =========================================
+   ACTION CELL + RETURNED INDICATOR
+   ========================================= */
+
+.actions-cell {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* red circular "!" badge */
+.attention-flag {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 999px;
+    background: #fee2e2;            /* light red background */
+    color: #b91c1c;                 /* dark red text */
+    font-size: 0.85rem;
+    font-weight: 800;
+    border: 1px solid #fecaca;      /* soft border */
+    box-shadow: 0 0 0 2px #fee2e2;  /* subtle ring */
+    animation: flagPulse 1.6s ease-out infinite;
+}
+
+/* subtle pulse so it's noticeable but not annoying */
+@keyframes flagPulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(248, 113, 113, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 8px rgba(248, 113, 113, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(248, 113, 113, 0);
+    }
+}
+
+/* =========================================
+   SCROLLABLE TABLES INSIDE CARDS
+   ========================================= */
+
+.table-scroll {
+    max-height: 260px;
+    overflow-y: auto;
+    border-radius: 0 0 12px 12px;
+}
+
+/* nicer, thinner scrollbar (WebKit) */
+.table-scroll::-webkit-scrollbar {
+    width: 6px;
+}
+.table-scroll::-webkit-scrollbar-track {
+    background: #f3f4f6;
+    border-radius: 999px;
+}
+.table-scroll::-webkit-scrollbar-thumb {
+    background: #cbd5f5;
+    border-radius: 999px;
+}
+
+/* =========================================
+   STATUS PILL BADGES
+   ========================================= */
+
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.12rem 0.7rem;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+/* main variants */
+.status-pill--pending {
+    background: #eff6ff;
+    color: #1d4ed8;
+}
+
+.status-pill--approved {
+    background: #ecfdf3;
+    color: #15803d;
+}
+
+.status-pill--rejected {
+    background: #fef2f2;
+    color: #b91c1c;
+}
+
+.status-pill--returned {
+    background: #fff7ed;
+    color: #c05621;
+}
+
+/* fallback / unknown */
+.status-pill--default {
+    background: #e5e7eb;
+    color: #374151;
 }

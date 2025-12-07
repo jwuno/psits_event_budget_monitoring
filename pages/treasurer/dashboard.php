@@ -67,9 +67,46 @@ $recentSql = "
     FROM proposals
     WHERE treasurer_status IN ('approved', 'returned')
     ORDER BY review_date DESC
-    LIMIT 5
 ";
 $recentRes = mysqli_query($conn, $recentSql);
+
+/* ---------------------------
+   STATUS PILL HELPER
+   --------------------------- */
+
+function renderStatusPill($statusRaw) {
+    $status = strtolower((string)$statusRaw);
+    $class  = 'status-pill status-pill--default';
+    $label  = ucfirst($status);
+
+    switch ($status) {
+        case 'pending':
+            $class = 'status-pill status-pill--pending';
+            $label = 'Pending';
+            break;
+        case 'approved':
+            $class = 'status-pill status-pill--approved';
+            $label = 'Approved';
+            break;
+        case 'rejected':
+            $class = 'status-pill status-pill--rejected';
+            $label = 'Rejected';
+            break;
+        case 'returned':
+            $class = 'status-pill status-pill--returned';
+            $label = 'Returned';
+            break;
+        default:
+            if ($label === '' || $label === ' ') {
+                $label = 'N/A';
+            }
+            break;
+    }
+
+    return '<span class="' . $class . '">' .
+           htmlspecialchars($label, ENT_QUOTES, 'UTF-8') .
+           '</span>';
+}
 ?>
 
 <div class="dashboard">
@@ -97,7 +134,7 @@ $recentRes = mysqli_query($conn, $recentSql);
             <span class="stat-value"><?php echo $endorsedCount; ?></span>
         </div>
 
-        <div class="stat-card">
+        <div class="stat-card budget">
             <span class="stat-label">Total Final Approved Budget</span>
             <span class="stat-value">₱<?php echo number_format($totalFinalBudget, 2); ?></span>
         </div>
@@ -106,7 +143,7 @@ $recentRes = mysqli_query($conn, $recentSql);
     <!-- Proposals awaiting Treasurer review (includes returned from President) -->
     <div class="card">
         <h2>Proposals Awaiting Your Review</h2>
-        <div class="table-wrapper">
+        <div class="table-wrapper table-scroll">
             <table class="proposals-table">
                 <thead>
                     <tr>
@@ -133,13 +170,15 @@ $recentRes = mysqli_query($conn, $recentSql);
                             <td><?php echo htmlspecialchars($p['event_date']); ?></td>
                             <td><?php echo htmlspecialchars($p['venue']); ?></td>
                             <td>₱<?php echo number_format($p['proposed_budget'], 2); ?></td>
-                            <td><?php echo ucfirst(htmlspecialchars($p['status'])); ?></td>
+                            <td>
+                                <?php echo renderStatusPill($p['status']); ?>
+                            </td>
                             <td>
                                 <?php
                                 // Who sent it here?
                                 echo $p['returned_from']
                                      ? 'Returned by ' . ucfirst(htmlspecialchars($p['returned_from']))
-                                     : 'New from Secretary';
+                                     : 'Secretary';
                                 ?>
                             </td>
                             <td>
@@ -159,20 +198,21 @@ $recentRes = mysqli_query($conn, $recentSql);
     <!-- Recently processed by Treasurer -->
     <div class="card">
         <h2>Recently Processed by Treasurer</h2>
-        <div class="table-wrapper">
+        <div class="table-wrapper table-scroll">
             <table class="proposals-table">
                 <thead>
                     <tr>
                         <th>Title</th>
                         <th>Event Date</th>
                         <th>Budget</th>
-                        <th>Treasurer Status</th>
+                        <th>President Status</th>
+                        <th>Adviser Status</th>
                     </tr>
                 </thead>
                 <tbody>
                 <?php if (!$recentRes || mysqli_num_rows($recentRes) === 0): ?>
                     <tr>
-                        <td colspan="4" style="text-align:center;color:#6b7280;">
+                        <td colspan="5" style="text-align:center;color:#6b7280;">
                             No recent actions yet.
                         </td>
                     </tr>
@@ -182,7 +222,8 @@ $recentRes = mysqli_query($conn, $recentSql);
                             <td><?php echo htmlspecialchars($r['title']); ?></td>
                             <td><?php echo htmlspecialchars($r['event_date']); ?></td>
                             <td>₱<?php echo number_format($r['proposed_budget'], 2); ?></td>
-                            <td><?php echo ucfirst(htmlspecialchars($r['treasurer_status'])); ?></td>
+                            <td><?php echo renderStatusPill($r['president_status']); ?></td>
+                            <td><?php echo renderStatusPill($r['adviser_status']); ?></td>
                         </tr>
                     <?php endwhile; ?>
                 <?php endif; ?>

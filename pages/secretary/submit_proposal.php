@@ -10,20 +10,42 @@ if (!isset($_POST['submit_proposal'])) {
     exit;
 }
 
-$title        = mysqli_real_escape_string($conn, $_POST['title'] ?? '');
-$description  = mysqli_real_escape_string($conn, $_POST['description'] ?? '');
-$event_date   = mysqli_real_escape_string($conn, $_POST['event_date'] ?? '');
-$venue        = mysqli_real_escape_string($conn, $_POST['venue'] ?? '');
-$expected     = (int)($_POST['expected_participants'] ?? 0);
-$budget       = (float)($_POST['proposed_budget'] ?? 0);
-$breakdown    = mysqli_real_escape_string($conn, $_POST['budget_breakdown'] ?? '');
-$created_by   = mysqli_real_escape_string($conn, $_SESSION['username'] ?? '');
+$title       = mysqli_real_escape_string($conn, $_POST['title'] ?? '');
+$description = mysqli_real_escape_string($conn, $_POST['description'] ?? '');
 
-// Basic required validation
-if ($title === '' || $event_date === '' || $venue === '' || $budget <= 0) {
+// NEW: start/end dates
+$event_start_date = mysqli_real_escape_string($conn, $_POST['event_start_date'] ?? '');
+$event_end_date   = mysqli_real_escape_string($conn, $_POST['event_end_date'] ?? '');
+
+// We will keep using event_date as the “main” date (for charts, listings, etc.)
+$event_date = $event_start_date;
+
+$venue     = mysqli_real_escape_string($conn, $_POST['venue'] ?? '');
+$expected  = (int)($_POST['expected_participants'] ?? 0);
+$budget    = (float)($_POST['proposed_budget'] ?? 0);
+$breakdown = mysqli_real_escape_string($conn, $_POST['budget_breakdown'] ?? '');
+$created_by = mysqli_real_escape_string($conn, $_SESSION['username'] ?? '');
+
+// ----- Basic required validation -----
+if ($title === '' || $event_start_date === '' || $venue === '' || $budget <= 0) {
     $_SESSION['error'] = 'Please fill out all required fields.';
     header('Location: create_proposal.php');
     exit;
+}
+
+// If end date is set, make sure it's not earlier than start date
+if ($event_end_date !== '') {
+    $startTs = strtotime($event_start_date);
+    $endTs   = strtotime($event_end_date);
+
+    if ($endTs === false || $startTs === false || $endTs < $startTs) {
+        $_SESSION['error'] = 'Event end date cannot be earlier than the start date.';
+        header('Location: create_proposal.php');
+        exit;
+    }
+} else {
+    // For one-day events, you may choose to store the same date as end date
+    $event_end_date = null; // or set to $event_start_date if you prefer
 }
 
 /* ---------- Handle file upload (optional) ---------- */
@@ -51,18 +73,20 @@ if (!empty($_FILES['attachment']['name'])) {
 }
 
 /* ---------- Insert into proposals ---------- */
-$status            = 'pending';
-$current_stage     = 'treasurer'; // Treasurer is first reviewer
-$treasurer_status  = 'pending';
-$president_status  = 'pending';
-$adviser_status    = 'pending';
-$returned_from     = null;
+$status           = 'pending';
+$current_stage    = 'treasurer'; // Treasurer is first reviewer
+$treasurer_status = 'pending';
+$president_status = 'pending';
+$adviser_status   = 'pending';
+$returned_from    = null;
 
 $sql = "
     INSERT INTO proposals (
         title,
         description,
         event_date,
+        event_start_date,
+        event_end_date,
         venue,
         expected_participants,
         proposed_budget,
@@ -79,6 +103,8 @@ $sql = "
         '$title',
         '$description',
         '$event_date',
+        '$event_start_date',
+        " . ($event_end_date ? "'$event_end_date'" : "NULL") . ",
         '$venue',
         $expected,
         $budget,

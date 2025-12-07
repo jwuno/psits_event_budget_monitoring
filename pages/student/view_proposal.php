@@ -1,143 +1,142 @@
 <?php
 require_once '../../includes/auth.php';
 requireRole('student');
+
 require_once '../../config/db_connect.php';
 include '../../includes/header.php';
 
-$id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-if ($id <= 0) {
-    header('Location: dashboard.php');
+$proposalId = isset($_GET['id']) ? (int) $_GET['id'] : 0;
+
+if ($proposalId <= 0) {
+    echo "<p style='max-width:1200px;margin:2rem auto;color:#b91c1c;'>Invalid proposal ID.</p>";
+    include '../../includes/footer.php';
     exit;
 }
 
-// Students should only see APPROVED proposals
-$sql = "SELECT * FROM proposals WHERE id = $id AND status = 'approved'";
+// Fetch proposal (read-only for students)
+// You can restrict to approved only if you want by adding: AND p.status = 'approved'
+$sql = "
+    SELECT p.*,
+           u.full_name AS prepared_by
+    FROM proposals p
+    LEFT JOIN users u
+      ON p.created_by = u.username
+    WHERE p.id = $proposalId
+    LIMIT 1
+";
 $res = mysqli_query($conn, $sql);
 
 if (!$res || mysqli_num_rows($res) === 0) {
-    ?>
-    <div class="dashboard">
-        <div class="card">
-            <h2>Proposal Not Available</h2>
-            <p>This proposal is either not approved yet or does not exist.</p>
-            <button type="button" class="btn btn-sm btn-primary" onclick="window.history.back();">
-                <i class="fa-solid fa-arrow-left"></i> Back
-            </button>
-        </div>
-    </div>
-    <?php
+    echo "<p style='max-width:1200px;margin:2rem auto;color:#b91c1c;'>Proposal not found.</p>";
     include '../../includes/footer.php';
     exit;
 }
 
 $proposal = mysqli_fetch_assoc($res);
+
+// status pill helper
+$status = strtolower($proposal['status']);
+switch ($status) {
+    case 'approved':
+        $statusClass = 'status-pill--approved';
+        break;
+    case 'pending':
+        $statusClass = 'status-pill--pending';
+        break;
+    case 'rejected':
+        $statusClass = 'status-pill--rejected';
+        break;
+    case 'returned':
+        $statusClass = 'status-pill--returned';
+        break;
+    default:
+        $statusClass = 'status-pill--default';
+}
 ?>
-
 <div class="dashboard">
-    <div class="dashboard-header" style="display:flex;justify-content:space-between;align-items:center;gap:1rem;">
-        <div>
-            <h1><?php echo htmlspecialchars($proposal['title']); ?></h1>
-            <p>Approved event details and budget for PSITS transparency.</p>
-        </div>
-
-        <button type="button" class="btn btn-sm" onclick="window.history.back();">
-            <i class="fa-solid fa-arrow-left"></i> Back
-        </button>
+    <div class="dashboard-header" style="margin-bottom:1rem;">
+        <h1>Event Details</h1>
+        <p>Read-only view of a PSITS proposal for transparency.</p>
     </div>
 
-    <!-- High-level summary -->
     <div class="card">
-        <div class="stats-grid" style="margin-top:0;">
-            <div class="stat-card approved">
-                <span class="stat-label">Final Status</span>
-                <span class="stat-value">
-                    <?php echo ucfirst(htmlspecialchars($proposal['status'])); ?>
-                </span>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;">
+            <div>
+                <h2 style="margin-bottom:0.25rem;"><?php echo htmlspecialchars($proposal['title']); ?></h2>
+                <p style="margin:0;color:#6b7280;font-size:0.9rem;">
+                    Prepared by:
+                    <strong><?php echo htmlspecialchars($proposal['prepared_by'] ?? $proposal['created_by']); ?></strong>
+                </p>
+                <p style="margin:0.15rem 0 0;color:#6b7280;font-size:0.9rem;">
+                    Date Submitted:
+                    <?php echo htmlspecialchars($proposal['date_submitted']); ?>
+                </p>
             </div>
-            <div class="stat-card budget">
-                <span class="stat-label">Approved Budget</span>
-                <span class="stat-value">
-                    ₱<?php echo number_format($proposal['proposed_budget'], 2); ?>
+            <div style="text-align:right;">
+                <span class="status-pill <?php echo $statusClass; ?>">
+                    <?php echo strtoupper(htmlspecialchars($proposal['status'])); ?>
                 </span>
+                <p style="margin-top:0.4rem;color:#6b7280;font-size:0.8rem;">
+                    Current Stage: <strong><?php echo ucfirst(htmlspecialchars($proposal['current_stage'])); ?></strong>
+                </p>
             </div>
         </div>
-        <p style="margin-top:0.75rem;color:#6b7280;font-size:0.9rem;">
-            This event has completed the internal review of the Treasurer, President, and Adviser
-            and is formally approved under PSITS Pagadian Annex.
-        </p>
-    </div>
 
-    <!-- Event info -->
-    <div class="card">
-        <h2>Event Information</h2>
-        <div class="table-wrapper">
-            <table class="proposals-table">
-                <tbody>
-                    <tr>
-                        <th style="width:220px;">Event Title</th>
-                        <td><?php echo htmlspecialchars($proposal['title']); ?></td>
-                    </tr>
-                    <tr>
-                        <th>Event Date</th>
-                        <td><?php echo htmlspecialchars($proposal['event_date']); ?></td>
-                    </tr>
-                    <tr>
-                        <th>Venue</th>
-                        <td><?php echo htmlspecialchars($proposal['venue']); ?></td>
-                    </tr>
-                    <tr>
-                        <th>Expected Participants</th>
-                        <td><?php echo htmlspecialchars($proposal['expected_participants']); ?></td>
-                    </tr>
-                    <tr>
-                        <th>Approved Budget</th>
-                        <td>₱<?php echo number_format($proposal['proposed_budget'], 2); ?></td>
-                    </tr>
-                    <tr>
-                        <th>Prepared By</th>
-                        <td><?php echo htmlspecialchars($proposal['created_by']); ?></td>
-                    </tr>
-                    <tr>
-                        <th>Date Submitted</th>
-                        <td><?php echo htmlspecialchars($proposal['date_submitted']); ?></td>
-                    </tr>
-                </tbody>
-            </table>
+        <hr style="margin:1rem 0;border:none;border-top:1px solid #e5e7eb;">
+
+        <div class="form-grid" style="row-gap:0.9rem;">
+            <div class="form-group">
+                <label>Event Date</label>
+                <div>
+                    <?php echo htmlspecialchars($proposal['event_date']); ?>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Venue</label>
+                <div>
+                    <?php echo htmlspecialchars($proposal['venue']); ?>
+                </div>
+            </div>
+
+            <?php if (!empty($proposal['expected_participants'])): ?>
+                <div class="form-group">
+                    <label>Expected Participants</label>
+                    <div>
+                        <?php echo (int) $proposal['expected_participants']; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+            <div class="form-group">
+                <label>Proposed Budget</label>
+                <div>
+                    ₱<?php echo number_format((float)$proposal['proposed_budget'], 2); ?>
+                </div>
+            </div>
         </div>
-    </div>
 
-    <!-- Description, breakdown, attachment -->
-    <div class="card">
-        <h2>Proposal Details</h2>
-
-        <h3 style="font-size:0.95rem;margin-top:0.2rem;">Event Description / Rationale</h3>
-        <p style="white-space:pre-wrap;margin-top:0.25rem;">
-            <?php
-            echo ($proposal['description'] !== null && $proposal['description'] !== '')
-                ? htmlspecialchars($proposal['description'])
-                : 'No description provided.';
-            ?>
-        </p>
-
-        <h3 style="font-size:0.95rem;margin-top:1rem;">Budget Breakdown</h3>
-        <p style="white-space:pre-wrap;margin-top:0.25rem;">
-            <?php
-            echo ($proposal['budget_breakdown'] !== null && $proposal['budget_breakdown'] !== '')
-                ? htmlspecialchars($proposal['budget_breakdown'])
-                : 'No budget breakdown provided.';
-            ?>
-        </p>
-
-        <?php if (!empty($proposal['attachment_path'])): ?>
-            <h3 style="font-size:0.95rem;margin-top:1rem;">Attachment</h3>
-            <p style="margin-top:0.25rem;">
-                <a class="btn btn-sm btn-primary"
-                   href="<?php echo '../../' . htmlspecialchars($proposal['attachment_path']); ?>"
-                   target="_blank">
-                    <i class="fa-solid fa-file-arrow-down"></i> View / Download Attachment
-                </a>
-            </p>
+        <?php if (!empty($proposal['description'])): ?>
+            <div class="form-group" style="margin-top:1rem;">
+                <label>Event Description / Rationale</label>
+                <div style="font-size:0.9rem;color:#111827;white-space:pre-wrap;">
+                    <?php echo nl2br(htmlspecialchars($proposal['description'])); ?>
+                </div>
+            </div>
         <?php endif; ?>
+
+        <?php if (!empty($proposal['budget_breakdown'])): ?>
+            <div class="form-group" style="margin-top:1rem;">
+                <label>Budget Breakdown</label>
+                <div style="font-size:0.9rem;color:#111827;white-space:pre-wrap;">
+                    <?php echo nl2br(htmlspecialchars($proposal['budget_breakdown'])); ?>
+                </div>
+            </div>
+        <?php endif; ?>
+
+        <div style="margin-top:1.25rem;display:flex;justify-content:flex-end;">
+            <a href="dashboard.php" class="btn btn-sm">Back to Dashboard</a>
+        </div>
     </div>
 </div>
 

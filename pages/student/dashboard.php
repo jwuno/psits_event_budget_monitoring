@@ -211,12 +211,13 @@ $annRes = mysqli_query($conn, $annSql);
                         <th>Venue</th>
                         <th>Budget</th>
                         <th>Prepared By</th>
+                        <th style="width:120px;text-align:center;">Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if (!$approvedEventsRes || mysqli_num_rows($approvedEventsRes) === 0): ?>
                         <tr>
-                            <td colspan="5" style="text-align:center;color:#6b7280;">
+                            <td colspan="6" style="text-align:center;color:#6b7280;">
                                 No approved events yet.
                             </td>
                         </tr>
@@ -228,6 +229,12 @@ $annRes = mysqli_query($conn, $annSql);
                                 <td><?php echo htmlspecialchars($row['venue']); ?></td>
                                 <td>₱<?php echo number_format($row['proposed_budget'], 2); ?></td>
                                 <td><?php echo htmlspecialchars($row['prepared_by'] ?? ''); ?></td>
+                                <td style="text-align:center;">
+                                    <a href="view_proposal.php?id=<?php echo (int)$row['id']; ?>"
+                                       class="btn-light-pill">
+                                        View
+                                    </a>
+                                </td>
                             </tr>
                         <?php endwhile; ?>
                     <?php endif; ?>
@@ -273,6 +280,26 @@ $annRes = mysqli_query($conn, $annSql);
         <?php endif; ?>
     </div>
 </div>
+
+<!-- small pill button style for the View action -->
+<style>
+.btn-light-pill {
+    display:inline-block;
+    padding:0.35rem 1.4rem;
+    border-radius:999px;
+    background-color:#f3f4f6;
+    color:#1e293b;
+    font-size:0.9rem;
+    font-weight:500;
+    text-decoration:none;
+    border:none;
+    transition:background-color 0.15s ease, transform 0.1s ease;
+}
+.btn-light-pill:hover {
+    background-color:#e5e7eb;
+    transform:translateY(-1px);
+}
+</style>
 
 <!-- ==========================
      CHART.JS + INLINE CHART CODE

@@ -18,10 +18,22 @@ include '../../includes/header.php';
                     <input type="text" id="title" name="title" required>
                 </div>
 
+                <!-- EVENT DURATION -->
                 <div class="form-group">
-                    <label for="event_date">Event Date <span style="color:#dc2626">*</span></label>
-                    <input type="date" id="event_date" name="event_date" required>
+                    <label for="event_start_date">
+                        Event Start Date <span style="color:#dc2626">*</span>
+                    </label>
+                    <input type="date" id="event_start_date" name="event_start_date" required>
                 </div>
+
+                <div class="form-group">
+                    <label for="event_end_date">Event End Date</label>
+                    <input type="date" id="event_end_date" name="event_end_date">
+                    <small style="color:#6b7280;font-size:0.8rem;">
+                        Leave blank or set the same date if this is a one-day event.
+                    </small>
+                </div>
+                <!-- END EVENT DURATION -->
 
                 <div class="form-group">
                     <label for="venue">Venue <span style="color:#dc2626">*</span></label>

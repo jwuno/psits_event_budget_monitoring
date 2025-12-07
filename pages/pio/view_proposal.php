@@ -33,6 +33,44 @@ if (!$res || mysqli_num_rows($res) === 0) {
 
 $proposal = mysqli_fetch_assoc($res);
 
+/* Event Schedule formatter */
+function formatEventSchedule(array $proposal): string
+{
+    $start  = $proposal['event_start_date'] ?? '';
+    $end    = $proposal['event_end_date'] ?? '';
+    $single = $proposal['event_date'] ?? '';
+
+    if (empty($start) && !empty($single)) {
+        $ts = strtotime($single);
+        return $ts ? date('F j, Y', $ts) : $single;
+    }
+
+    if (empty($start)) {
+        return 'Not set';
+    }
+
+    if (empty($end) || $end === $start) {
+        $ts = strtotime($start);
+        return $ts ? date('F j, Y', $ts) : $start;
+    }
+
+    $startTs = strtotime($start);
+    $endTs   = strtotime($end);
+
+    if ($startTs === false || $endTs === false) {
+        return trim($start . ' - ' . $end);
+    }
+
+    if (date('Y', $startTs) === date('Y', $endTs)) {
+        if (date('m', $startTs) === date('m', $endTs)) {
+            return date('F j', $startTs) . '–' . date('j, Y', $endTs);
+        }
+        return date('F j', $startTs) . ' – ' . date('F j, Y', $endTs);
+    }
+
+    return date('F j, Y', $startTs) . ' – ' . date('F j, Y', $endTs);
+}
+
 /* --------------------------
    Handle POST: new announcement
    -------------------------- */
@@ -72,6 +110,7 @@ $annSql = "
 ";
 $annRes = mysqli_query($conn, $annSql);
 
+$eventSchedule = formatEventSchedule($proposal);
 ?>
 
 <div class="dashboard">
@@ -96,9 +135,9 @@ $annRes = mysqli_query($conn, $annSql);
                 </span>
             </div>
             <div class="stat-card">
-                <span class="stat-label">Event Date</span>
+                <span class="stat-label">Event Schedule</span>
                 <span class="stat-value">
-                    <?php echo htmlspecialchars($proposal['event_date']); ?>
+                    <?php echo htmlspecialchars($eventSchedule); ?>
                 </span>
             </div>
             <div class="stat-card">
@@ -127,6 +166,10 @@ $annRes = mysqli_query($conn, $annSql);
                         <td><?php echo htmlspecialchars($proposal['title']); ?></td>
                     </tr>
                     <tr>
+                        <th>Event Schedule</th>
+                        <td><?php echo htmlspecialchars($eventSchedule); ?></td>
+                    </tr>
+                    <tr>
                         <th>Description</th>
                         <td style="white-space:pre-wrap;">
                             <?php echo htmlspecialchars($proposal['description']); ?>
@@ -151,7 +194,7 @@ $annRes = mysqli_query($conn, $annSql);
 
     <!-- Budget & attachment -->
     <div class="card">
-        <h2>Budget & Attachments</h2>
+        <h2>Budget &amp; Attachments</h2>
 
         <h3 style="font-size:0.95rem;margin-top:0.2rem;">Budget Breakdown</h3>
         <p style="white-space:pre-wrap;margin-top:0.25rem;">

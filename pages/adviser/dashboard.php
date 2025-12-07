@@ -5,6 +5,32 @@ requireRole('adviser');
 require_once '../../config/db_connect.php';
 include '../../includes/header.php';
 
+/* ---------- Helper: status pill ---------- */
+function renderStatusPill($status) {
+    $raw = strtolower(trim((string)$status));
+
+    switch ($raw) {
+        case 'pending':
+            $class = 'status-pill status-pill--pending';
+            break;
+        case 'approved':
+            $class = 'status-pill status-pill--approved';
+            break;
+        case 'rejected':
+            $class = 'status-pill status-pill--rejected';
+            break;
+        case 'returned':
+            $class = 'status-pill status-pill--returned';
+            break;
+        default:
+            $class = 'status-pill status-pill--default';
+            break;
+    }
+
+    $label = $raw === '' ? 'N/A' : ucfirst($raw);
+    return '<span class="' . $class . '">' . htmlspecialchars($label) . '</span>';
+}
+
 /* ---------- STATS ---------- */
 
 $pendingFinal = 0;
@@ -97,9 +123,10 @@ $history = mysqli_query(
     </div>
 
     <div class="charts-grid">
+        <!-- Awaiting final decision -->
         <div class="card">
             <h2>Proposals Awaiting Final Decision</h2>
-            <div class="table-wrapper">
+            <div class="table-wrapper table-scroll">
                 <table class="proposals-table">
                     <thead>
                         <tr>
@@ -118,10 +145,13 @@ $history = mysqli_query(
                                 <td><?php echo htmlspecialchars($p['event_date']); ?></td>
                                 <td><?php echo htmlspecialchars($p['venue']); ?></td>
                                 <td>₱<?php echo number_format($p['proposed_budget'], 2); ?></td>
-                                <td>
-                                    <a href="review_proposal.php?id=<?php echo (int)$p['id']; ?>" class="btn btn-sm btn-primary">
+                                <td class="actions-cell">
+                                    <a href="review_proposal.php?id=<?php echo (int)$p['id']; ?>"
+                                       class="btn btn-sm btn-primary">
                                         Decide
                                     </a>
+                                    <span class="attention-flag attention-flag--pulse"
+                                          title="Awaiting your final decision">!</span>
                                 </td>
                             </tr>
                         <?php endwhile; ?>
@@ -133,11 +163,17 @@ $history = mysqli_query(
                     </tbody>
                 </table>
             </div>
+            <p style="margin-top:0.5rem;font-size:0.8rem;color:#6b7280;">
+                <span class="attention-flag attention-flag--pulse"
+                      style="vertical-align:middle;margin-right:0.25rem;">!</span>
+                indicates a proposal <strong>needing your final decision</strong>.
+            </p>
         </div>
 
+        <!-- History -->
         <div class="card">
             <h2>Recent Final Decisions</h2>
-            <div class="table-wrapper">
+            <div class="table-wrapper table-scroll">
                 <table class="proposals-table">
                     <thead>
                         <tr>
@@ -154,7 +190,7 @@ $history = mysqli_query(
                                 <td><?php echo htmlspecialchars($p['title']); ?></td>
                                 <td><?php echo htmlspecialchars($p['event_date']); ?></td>
                                 <td>₱<?php echo number_format($p['proposed_budget'], 2); ?></td>
-                                <td><?php echo ucfirst(htmlspecialchars($p['adviser_status'])); ?></td>
+                                <td><?php echo renderStatusPill($p['adviser_status']); ?></td>
                             </tr>
                         <?php endwhile; ?>
                     <?php else: ?>

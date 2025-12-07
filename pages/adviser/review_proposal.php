@@ -33,6 +33,44 @@ if (!$res || mysqli_num_rows($res) === 0) {
 
 $proposal = mysqli_fetch_assoc($res);
 
+/* Event Schedule formatter */
+function formatEventSchedule(array $proposal): string
+{
+    $start  = $proposal['event_start_date'] ?? '';
+    $end    = $proposal['event_end_date'] ?? '';
+    $single = $proposal['event_date'] ?? '';
+
+    if (empty($start) && !empty($single)) {
+        $ts = strtotime($single);
+        return $ts ? date('F j, Y', $ts) : $single;
+    }
+
+    if (empty($start)) {
+        return 'Not set';
+    }
+
+    if (empty($end) || $end === $start) {
+        $ts = strtotime($start);
+        return $ts ? date('F j, Y', $ts) : $start;
+    }
+
+    $startTs = strtotime($start);
+    $endTs   = strtotime($end);
+
+    if ($startTs === false || $endTs === false) {
+        return trim($start . ' - ' . $end);
+    }
+
+    if (date('Y', $startTs) === date('Y', $endTs)) {
+        if (date('m', $startTs) === date('m', $endTs)) {
+            return date('F j', $startTs) . '–' . date('j, Y', $endTs);
+        }
+        return date('F j', $startTs) . ' – ' . date('F j, Y', $endTs);
+    }
+
+    return date('F j, Y', $startTs) . ' – ' . date('F j, Y', $endTs);
+}
+
 /* ---------- Handle POST (Final Approve / Final Reject) ---------- */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $remarks = mysqli_real_escape_string($conn, $_POST['adviser_remarks'] ?? '');
@@ -94,10 +132,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // If there was an error, reload latest data
+    // If error, reload latest data
     $res = mysqli_query($conn, "SELECT * FROM proposals WHERE id = $id");
     $proposal = mysqli_fetch_assoc($res);
 }
+
+$eventSchedule = formatEventSchedule($proposal);
 ?>
 
 <div class="dashboard">
@@ -165,8 +205,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <td><?php echo htmlspecialchars($proposal['title']); ?></td>
                     </tr>
                     <tr>
-                        <th>Event Date</th>
-                        <td><?php echo htmlspecialchars($proposal['event_date']); ?></td>
+                        <th>Event Schedule</th>
+                        <td><?php echo htmlspecialchars($eventSchedule); ?></td>
                     </tr>
                     <tr>
                         <th>Venue</th>
@@ -191,7 +231,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <!-- Budget + attachment -->
     <div class="card">
-        <h2>Budget & Attachments</h2>
+        <h2>Budget &amp; Attachments</h2>
 
         <h3 style="font-size:0.95rem;margin-top:0.2rem;">Budget Breakdown</h3>
         <p style="white-space:pre-wrap;margin-top:0.25rem;">

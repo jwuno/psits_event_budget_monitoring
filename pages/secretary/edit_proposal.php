@@ -28,7 +28,7 @@ if (!$res || mysqli_num_rows($res) === 0) {
         <div class="card">
             <h2>Proposal Not Found</h2>
             <p>You may not have permission to edit this proposal.</p>
-            <button type="button" class="btn btn-sm btn-primary" onclick="window.location.href='my_proposals.php';">
+            <button type="button" class="btn btn-sm btn-primary" onclick="window.location.href='dashboard.php';">
                 <i class="fa-solid fa-arrow-left"></i> Back to My Proposals
             </button>
         </div>
@@ -55,8 +55,8 @@ if (!$canEdit) {
                 This proposal is currently under review and cannot be edited.
                 You can only edit proposals that have been returned to you.
             </p>
-            <button type="button" class="btn btn-sm btn-primary" onclick="window.location.href='my_proposals.php';">
-                <i class="fa-solid fa-arrow-left"></i> Back to My Proposals
+            <button type="button" class="btn btn-sm btn-primary" onclick="window.location.href='dashboard.php';">
+                <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
             </button>
         </div>
     </div>
@@ -129,7 +129,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (mysqli_query($conn, $update)) {
         $_SESSION['success'] = 'Proposal updated and resubmitted to the Treasurer.';
-        header('Location: my_proposals.php');
+        header('Location: dashboard.php');
         exit;
     } else {
         $_SESSION['error'] = 'Error updating proposal: ' . mysqli_error($conn);
@@ -147,7 +147,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <p>Adjust your event details based on Treasurer feedback, then resubmit.</p>
         </div>
 
-        <button type="button" class="btn btn-sm" onclick="window.location.href='my_proposals.php';">
+        <button type="button" class="btn btn-sm" onclick="window.location.href='dashboard.php';">
             <i class="fa-solid fa-arrow-left"></i> Back to My Proposals
         </button>
     </div>

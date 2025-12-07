@@ -65,12 +65,48 @@ $forReview = mysqli_query(
 
 $recent = mysqli_query(
     $conn,
-    "SELECT id, title, event_date, proposed_budget, president_status, review_date
+    "SELECT id,
+            title,
+            event_date,
+            proposed_budget,
+            president_status,
+            adviser_status,
+            review_date
      FROM proposals
      WHERE president_status <> 'pending'
      ORDER BY review_date DESC
      LIMIT 8"
 );
+
+/* ---------- STATUS PILL HELPER ---------- */
+function renderStatusPill($statusRaw) {
+    $status = strtolower((string)$statusRaw);
+    $class  = 'status-pill status-pill--default';
+    $label  = ucfirst($status);
+
+    switch ($status) {
+        case 'pending':
+            $class = 'status-pill status-pill--pending';
+            $label = 'Pending';
+            break;
+        case 'returned':
+            $class = 'status-pill status-pill--returned';
+            $label = 'Returned';
+            break;
+        case 'approved':
+            $class = 'status-pill status-pill--approved';
+            $label = 'Approved';
+            break;
+        case 'rejected':
+            $class = 'status-pill status-pill--rejected';
+            $label = 'Rejected';
+            break;
+    }
+
+    return '<span class="' . $class . '">' .
+           htmlspecialchars($label, ENT_QUOTES, 'UTF-8') .
+           '</span>';
+}
 ?>
 <div class="dashboard">
     <div class="dashboard-header">
@@ -98,9 +134,10 @@ $recent = mysqli_query(
     </div>
 
     <div class="charts-grid">
+        <!-- Pending for President -->
         <div class="card">
             <h2>Proposals Awaiting Your Review</h2>
-            <div class="table-wrapper">
+            <div class="table-wrapper table-scroll">
                 <table class="proposals-table">
                     <thead>
                         <tr>
@@ -119,10 +156,14 @@ $recent = mysqli_query(
                                 <td><?php echo htmlspecialchars($p['event_date']); ?></td>
                                 <td><?php echo htmlspecialchars($p['venue']); ?></td>
                                 <td>₱<?php echo number_format($p['proposed_budget'], 2); ?></td>
-                                <td>
-                                    <a href="review_proposal.php?id=<?php echo (int)$p['id']; ?>" class="btn btn-sm btn-primary">
+                                <td class="actions-cell">
+                                    <a href="review_proposal.php?id=<?php echo (int)$p['id']; ?>"
+                                       class="btn btn-sm btn-primary">
                                         Review
                                     </a>
+                                    <!-- Anything here is waiting on the President -->
+                                    <span class="attention-flag"
+                                          title="Awaiting your review">!</span>
                                 </td>
                             </tr>
                         <?php endwhile; ?>
@@ -134,28 +175,42 @@ $recent = mysqli_query(
                     </tbody>
                 </table>
             </div>
+            <p style="margin-top:0.5rem;font-size:0.8rem;color:#6b7280;">
+                <span class="attention-flag"
+                      style="vertical-align:middle;margin-right:0.25rem;">!</span>
+                indicates a proposal <strong>awaiting your review</strong>.
+            </p>
         </div>
 
+        <!-- Recent actions -->
         <div class="card">
             <h2>Recently Processed by President</h2>
-            <div class="table-wrapper">
+            <div class="table-wrapper table-scroll">
                 <table class="proposals-table">
                     <thead>
                         <tr>
                             <th>Title</th>
                             <th>Event Date</th>
                             <th>Budget</th>
-                            <th>President Status</th>
+                            <th>Status</th>
                         </tr>
                     </thead>
                     <tbody>
                     <?php if ($recent && mysqli_num_rows($recent) > 0): ?>
                         <?php while ($p = mysqli_fetch_assoc($recent)): ?>
+                            <?php
+                                // Prefer final Adviser status if it exists, otherwise fall back to President status
+                                $statusRaw = !empty($p['adviser_status'])
+                                    ? $p['adviser_status']
+                                    : $p['president_status'];
+                            ?>
                             <tr>
                                 <td><?php echo htmlspecialchars($p['title']); ?></td>
                                 <td><?php echo htmlspecialchars($p['event_date']); ?></td>
                                 <td>₱<?php echo number_format($p['proposed_budget'], 2); ?></td>
-                                <td><?php echo ucfirst(htmlspecialchars($p['president_status'])); ?></td>
+                                <td>
+                                    <?php echo renderStatusPill($statusRaw); ?>
+                                </td>
                             </tr>
                         <?php endwhile; ?>
                     <?php else: ?>

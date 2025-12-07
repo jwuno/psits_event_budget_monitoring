@@ -27,11 +27,60 @@ if (!$res || mysqli_num_rows($res) === 0) {
         </div>
     </div>
     <?php
-    include '../../includes/footer.php';
+    include '../../includes/footer.php>';
     exit;
 }
 
 $proposal = mysqli_fetch_assoc($res);
+
+/**
+ * Event Schedule (duration) formatter
+ * Uses:
+ *   - event_start_date + event_end_date  (preferred)
+ *   - falls back to event_date if start is empty
+ */
+function formatEventSchedule(array $proposal): string
+{
+    $start  = $proposal['event_start_date'] ?? '';
+    $end    = $proposal['event_end_date'] ?? '';
+    $single = $proposal['event_date'] ?? '';
+
+    // No start date but we have the old single event_date
+    if (empty($start) && !empty($single)) {
+        $ts = strtotime($single);
+        return $ts ? date('F j, Y', $ts) : $single;
+    }
+
+    if (empty($start)) {
+        return 'Not set';
+    }
+
+    // One-day event
+    if (empty($end) || $end === $start) {
+        $ts = strtotime($start);
+        return $ts ? date('F j, Y', $ts) : $start;
+    }
+
+    $startTs = strtotime($start);
+    $endTs   = strtotime($end);
+
+    if ($startTs === false || $endTs === false) {
+        return trim($start . ' - ' . $end);
+    }
+
+    // Same year
+    if (date('Y', $startTs) === date('Y', $endTs)) {
+        // Same month
+        if (date('m', $startTs) === date('m', $endTs)) {
+            return date('F j', $startTs) . '–' . date('j, Y', $endTs);
+        }
+        // Different month, same year
+        return date('F j', $startTs) . ' – ' . date('F j, Y', $endTs);
+    }
+
+    // Different year
+    return date('F j, Y', $startTs) . ' – ' . date('F j, Y', $endTs);
+}
 
 /**
  * Treasurer can edit certain fields ONLY when:
@@ -78,16 +127,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $update = "
             UPDATE proposals
             SET
-                treasurer_status     = '$treasurer_status',
-                treasurer_remarks    = '$remarks',
-                status               = '$status',
-                current_stage        = '$current_stage',
-                returned_from        = NULL,
-                reviewed_by          = '$user',
-                review_date          = '$now',
-                proposed_budget      = $newBudget,
-                expected_participants= $newParticipants,
-                budget_breakdown     = '$newBudgetBreakdown'
+                treasurer_status      = '$treasurer_status',
+                treasurer_remarks     = '$remarks',
+                status                = '$status',
+                current_stage         = '$current_stage',
+                returned_from         = NULL,
+                reviewed_by           = '$user',
+                review_date           = '$now',
+                proposed_budget       = $newBudget,
+                expected_participants = $newParticipants,
+                budget_breakdown      = '$newBudgetBreakdown'
             WHERE id = $id
         ";
 
@@ -109,16 +158,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $update = "
             UPDATE proposals
             SET
-                treasurer_status     = '$treasurer_status',
-                treasurer_remarks    = '$remarks',
-                status               = '$status',
-                current_stage        = '$current_stage',
-                returned_from        = '$returned_from',
-                reviewed_by          = '$user',
-                review_date          = '$now',
-                proposed_budget      = $newBudget,
-                expected_participants= $newParticipants,
-                budget_breakdown     = '$newBudgetBreakdown'
+                treasurer_status      = '$treasurer_status',
+                treasurer_remarks     = '$remarks',
+                status                = '$status',
+                current_stage         = '$current_stage',
+                returned_from         = '$returned_from',
+                reviewed_by           = '$user',
+                review_date           = '$now',
+                proposed_budget       = $newBudget,
+                expected_participants = $newParticipants,
+                budget_breakdown      = '$newBudgetBreakdown'
             WHERE id = $id
         ";
 
@@ -139,6 +188,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $proposal['status'] === 'returned' &&
         $proposal['returned_from'] === 'president';
 }
+
+$eventSchedule = formatEventSchedule($proposal);
 ?>
 
 <div class="dashboard">
@@ -185,7 +236,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <!-- Single form for all editable fields -->
     <form action="review_proposal.php?id=<?php echo $id; ?>" method="post">
-        <!-- Event info (participants editable when returned by President) -->
+        <!-- Event info -->
         <div class="card">
             <h2>Event Information</h2>
             <div class="table-wrapper">
@@ -196,8 +247,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <td><?php echo htmlspecialchars($proposal['title']); ?></td>
                         </tr>
                         <tr>
-                            <th>Event Date</th>
-                            <td><?php echo htmlspecialchars($proposal['event_date']); ?></td>
+                            <th>Event Schedule</th>
+                            <td><?php echo htmlspecialchars($eventSchedule); ?></td>
                         </tr>
                         <tr>
                             <th>Venue</th>
@@ -237,7 +288,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <!-- Budget + attachment -->
         <div class="card">
-            <h2>Budget & Attachments</h2>
+            <h2>Budget &amp; Attachments</h2>
 
             <div class="form-group">
                 <label for="proposed_budget">Proposed Budget (₱)</label>
