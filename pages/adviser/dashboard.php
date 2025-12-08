@@ -5,30 +5,41 @@ requireRole('adviser');
 require_once '../../config/db_connect.php';
 include '../../includes/header.php';
 
-/* ---------- Helper: status pill ---------- */
-function renderStatusPill($status) {
-    $raw = strtolower(trim((string)$status));
+/* ---------- Helper: status pill (local name to avoid conflicts) ---------- */
+if (!function_exists('renderAdviserStatusPill')) {
+    function renderAdviserStatusPill($statusRaw) {
+        $status = strtolower(trim((string)$statusRaw));
+        $class  = 'status-pill status-pill--default';
+        $label  = ucfirst($status);
 
-    switch ($raw) {
-        case 'pending':
-            $class = 'status-pill status-pill--pending';
-            break;
-        case 'approved':
-            $class = 'status-pill status-pill--approved';
-            break;
-        case 'rejected':
-            $class = 'status-pill status-pill--rejected';
-            break;
-        case 'returned':
-            $class = 'status-pill status-pill--returned';
-            break;
-        default:
-            $class = 'status-pill status-pill--default';
-            break;
+        switch ($status) {
+            case 'pending':
+                $class = 'status-pill status-pill--pending';
+                $label = 'Pending';
+                break;
+            case 'approved':
+                $class = 'status-pill status-pill--approved';
+                $label = 'Approved';
+                break;
+            case 'rejected':
+                $class = 'status-pill status-pill--rejected';
+                $label = 'Rejected';
+                break;
+            case 'returned':
+                $class = 'status-pill status-pill--returned';
+                $label = 'Returned';
+                break;
+            default:
+                if ($label === '' || $label === ' ') {
+                    $label = 'N/A';
+                }
+                break;
+        }
+
+        return '<span class="' . $class . '">' .
+               htmlspecialchars($label, ENT_QUOTES, 'UTF-8') .
+               '</span>';
     }
-
-    $label = $raw === '' ? 'N/A' : ucfirst($raw);
-    return '<span class="' . $class . '">' . htmlspecialchars($label) . '</span>';
 }
 
 /* ---------- STATS ---------- */
@@ -90,11 +101,15 @@ $forDecision = mysqli_query(
 
 $history = mysqli_query(
     $conn,
-    "SELECT id, title, event_date, proposed_budget, adviser_status, review_date
+    "SELECT id,
+            title,
+            event_date,
+            proposed_budget,
+            adviser_status,
+            review_date
      FROM proposals
      WHERE current_stage = 'final'
-     ORDER BY review_date DESC
-     LIMIT 10"
+     ORDER BY review_date DESC"
 );
 ?>
 <div class="dashboard">
@@ -181,6 +196,7 @@ $history = mysqli_query(
                             <th>Event Date</th>
                             <th>Budget</th>
                             <th>Adviser Status</th>
+                            <th style="width:120px;">Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -190,12 +206,18 @@ $history = mysqli_query(
                                 <td><?php echo htmlspecialchars($p['title']); ?></td>
                                 <td><?php echo htmlspecialchars($p['event_date']); ?></td>
                                 <td>₱<?php echo number_format($p['proposed_budget'], 2); ?></td>
-                                <td><?php echo renderStatusPill($p['adviser_status']); ?></td>
+                                <td><?php echo renderAdviserStatusPill($p['adviser_status']); ?></td>
+                                <td class="actions-cell">
+                                    <a href="view_proposal.php?id=<?php echo (int)$p['id']; ?>"
+                                       class="btn btn-sm">
+                                        View
+                                    </a>
+                                </td>
                             </tr>
                         <?php endwhile; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="4" class="empty-state">No final decisions recorded yet.</td>
+                            <td colspan="5" class="empty-state">No final decisions recorded yet.</td>
                         </tr>
                     <?php endif; ?>
                     </tbody>

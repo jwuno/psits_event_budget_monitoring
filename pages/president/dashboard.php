@@ -55,14 +55,17 @@ if ($res4 && $row4 = mysqli_fetch_assoc($res4)) {
 
 /* ---------- TABLES ---------- */
 
+// Proposals waiting for President review
 $forReview = mysqli_query(
     $conn,
     "SELECT id, title, event_date, venue, proposed_budget
      FROM proposals
-     WHERE status = 'pending' AND current_stage = 'president'
+     WHERE status = 'pending'
+       AND current_stage = 'president'
      ORDER BY date_submitted ASC"
 );
 
+// Recently processed by President (shows combined status)
 $recent = mysqli_query(
     $conn,
     "SELECT id,
@@ -77,36 +80,6 @@ $recent = mysqli_query(
      ORDER BY review_date DESC
      LIMIT 8"
 );
-
-/* ---------- STATUS PILL HELPER ---------- */
-function renderStatusPill($statusRaw) {
-    $status = strtolower((string)$statusRaw);
-    $class  = 'status-pill status-pill--default';
-    $label  = ucfirst($status);
-
-    switch ($status) {
-        case 'pending':
-            $class = 'status-pill status-pill--pending';
-            $label = 'Pending';
-            break;
-        case 'returned':
-            $class = 'status-pill status-pill--returned';
-            $label = 'Returned';
-            break;
-        case 'approved':
-            $class = 'status-pill status-pill--approved';
-            $label = 'Approved';
-            break;
-        case 'rejected':
-            $class = 'status-pill status-pill--rejected';
-            $label = 'Rejected';
-            break;
-    }
-
-    return '<span class="' . $class . '">' .
-           htmlspecialchars($label, ENT_QUOTES, 'UTF-8') .
-           '</span>';
-}
 ?>
 <div class="dashboard">
     <div class="dashboard-header">
@@ -193,13 +166,14 @@ function renderStatusPill($statusRaw) {
                             <th>Event Date</th>
                             <th>Budget</th>
                             <th>Status</th>
+                            <th style="width:90px;">Action</th>
                         </tr>
                     </thead>
                     <tbody>
                     <?php if ($recent && mysqli_num_rows($recent) > 0): ?>
                         <?php while ($p = mysqli_fetch_assoc($recent)): ?>
                             <?php
-                                // Prefer final Adviser status if it exists, otherwise fall back to President status
+                                // Prefer final Adviser status if available; else show President status
                                 $statusRaw = !empty($p['adviser_status'])
                                     ? $p['adviser_status']
                                     : $p['president_status'];
@@ -211,11 +185,17 @@ function renderStatusPill($statusRaw) {
                                 <td>
                                     <?php echo renderStatusPill($statusRaw); ?>
                                 </td>
+                                <td>
+                                    <a href="view_proposal.php?id=<?php echo (int)$p['id']; ?>"
+                                       class="btn btn-sm">
+                                        View
+                                    </a>
+                                </td>
                             </tr>
                         <?php endwhile; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="4" class="empty-state">No recent actions yet.</td>
+                            <td colspan="5" class="empty-state">No recent actions yet.</td>
                         </tr>
                     <?php endif; ?>
                     </tbody>

@@ -2,6 +2,8 @@
 // includes/header.php
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/functions.php';
+require_once __DIR__ . '/helpers.php';
+
 
 // 👇 same base as in auth.php
 $base = '/psits_event_budget_monitoring/';
