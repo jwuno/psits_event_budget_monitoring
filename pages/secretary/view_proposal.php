@@ -125,6 +125,12 @@ if (
         </div>
         <div style="display:flex;gap:0.5rem;flex-wrap:wrap;justify-content:flex-end;">
             <a href="dashboard.php" class="btn btn-sm">← Back to Dashboard</a>
+            <a href="../shared/print_proposal.php?id=<?php echo (int)$proposalId; ?>"
+            target="_blank"
+            class="btn btn-sm btn-primary">
+            <i class="fa-solid fa-print"></i> Print Proposal
+            </a>
+
             <?php if ($canEditResubmit): ?>
                 <a href="edit_proposal.php?id=<?php echo (int)$proposalId; ?>"
                    class="btn btn-sm btn-primary">
@@ -229,7 +235,7 @@ if (
     <!-- Description -->
     <div class="card">
         <h2>Event Description / Rationale</h2>
-        <p style="white-space:pre-wrap;font-size:0.9rem;color:#111827;margin-top:0.5rem;">
+        <p style="white-space:pre-wrap;font-size:0.9rem;color:#111827;margin-top:0.5rem; max-height:220px;overflow-y:auto;padding-right:4px;">
             <?php echo $description !== '' ? htmlspecialchars($description) : 'No description provided.'; ?>
         </p>
     </div>
@@ -237,7 +243,7 @@ if (
     <!-- Budget Breakdown -->
     <div class="card">
         <h2>Budget Breakdown</h2>
-        <p style="white-space:pre-wrap;font-size:0.9rem;color:#111827;margin-top:0.5rem;">
+        <p style="white-space:pre-wrap;font-size:0.9rem;color:#111827;margin-top:0.5rem; max-height:220px;overflow-y:auto;padding-right:4px;">
             <?php echo $breakdown !== '' ? htmlspecialchars($breakdown) : 'No detailed budget breakdown provided.'; ?>
         </p>
     </div>

@@ -31,7 +31,8 @@ if (!$res || mysqli_num_rows($res) === 0) {
     exit;
 }
 
-$proposal = mysqli_fetch_assoc($res);
+$proposal    = mysqli_fetch_assoc($res);
+$description = trim((string)($proposal['description'] ?? ''));
 
 /* Event Schedule formatter */
 function formatEventSchedule(array $proposal): string
@@ -134,8 +135,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // If error, reload latest
-    $res = mysqli_query($conn, "SELECT * FROM proposals WHERE id = $id");
-    $proposal = mysqli_fetch_assoc($res);
+    $res       = mysqli_query($conn, "SELECT * FROM proposals WHERE id = $id");
+    $proposal  = mysqli_fetch_assoc($res);
+    $description = trim((string)($proposal['description'] ?? ''));
 }
 
 $eventSchedule = formatEventSchedule($proposal);
@@ -224,12 +226,24 @@ $eventSchedule = formatEventSchedule($proposal);
         </div>
     </div>
 
+    <!-- Description -->
+    <div class="card">
+        <h2>Event Description / Rationale</h2>
+        <p style="white-space:pre-wrap;font-size:0.9rem;color:#111827;margin-top:0.5rem;max-height:220px;overflow-y:auto;padding-right:4px;">
+            <?php
+            echo $description !== ''
+                ? htmlspecialchars($description)
+                : 'No description provided.';
+            ?>
+        </p>
+    </div>
+
     <!-- Budget + attachment -->
     <div class="card">
         <h2>Budget &amp; Attachments</h2>
 
         <h3 style="font-size:0.95rem;margin-top:0.2rem;">Budget Breakdown</h3>
-        <p style="white-space:pre-wrap;margin-top:0.25rem;">
+        <p style="white-space:pre-wrap;font-size:0.9rem;color:#111827;margin-top:0.25rem;max-height:220px;overflow-y:auto;padding-right:4px;">
             <?php
             echo ($proposal['budget_breakdown'] !== null && $proposal['budget_breakdown'] !== '')
                 ? htmlspecialchars($proposal['budget_breakdown'])

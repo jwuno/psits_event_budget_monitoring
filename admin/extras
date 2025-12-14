@@ -96,3 +96,188 @@ INSERT INTO users (username, password, full_name, role_id) VALUES
 ('ma@gmail.com', '827ccb0eea8a706c4c34a16891f84e7b', 'Marnell', 1),
 ('de@gmail.com', '827ccb0eea8a706c4c34a16891f84e7b', 'Drexzel', 1);
 
+C:/xampp/htdocs/psits_event_budget_monitoring/
+│   index.php
+│   logout.php
+│   validate_login.php
+│
+├───assets
+│   ├───css
+│   │       style-login.css
+│   │       style.css
+│   │
+│   ├───img
+│   │       psits.png
+│   │
+│   └───js
+│           app.js
+│           file-upload.js
+│
+├───config
+│       db_connect.php
+│
+├───includes
+│       auth.php
+│       footer.php
+│       functions.php
+│       header.php
+│       helpers.php
+│       proposals_table.php
+│
+├───pages
+│   ├───adviser
+│   │       dashboard.php
+│   │       review_proposal.php
+│   │       view_proposal.php
+│   │
+│   ├───pio
+│   │       dashboard.php
+│   │       view_proposal.php
+│   │
+│   ├───president
+│   │       dashboard.php
+│   │       review_proposal.php
+│   │       view_proposal.php
+│   │
+│   ├───secretary
+│   │       create_proposal.php
+│   │       dashboard.php
+│   │       edit_proposal.php
+│   │       submit_proposal.php
+│   │       view_proposal.php
+│   │
+│   ├───shared
+│   │       print_proposal.php
+│   │
+│   ├───student
+│   │       announcements.php
+│   │       dashboard.php
+│   │       view_proposal.php
+│   │
+│   └───treasurer
+│           dashboard.php
+│           review_proposal.php
+│           view_proposal.php
+│
+└───uploads
+
+C:\xampp\htdocs\psits_event_budget_monitoring>tree /F
+Folder PATH listing
+Volume serial number is 0C7E-A2B5
+C::\xampp\htdocs\psits_event_budget_monitoring
+│   index.php
+│   logout.php
+│   validate_login.php
+│
+├───assets
+│   ├───css
+│   │       style-login.css
+│   │       style.css
+│   │
+│   ├───img
+│   │       psits.png
+│   │
+│   └───js
+│           app.js
+│           file-upload.js
+│
+├───config
+│       db_connect.php
+│
+├───includes
+│       auth.php
+│       footer.php
+│       functions.php
+│       header.php
+│       helpers.php
+│       proposals_table.php
+│
+├───pages
+│   ├───adviser
+│   │       dashboard.php
+│   │       review_proposal.php
+│   │       view_proposal.php
+│   │
+│   ├───pio
+│   │       dashboard.php
+│   │       view_proposal.php
+│   │
+│   ├───president
+│   │       dashboard.php
+│   │       review_proposal.php
+│   │       view_proposal.php
+│   │
+│   ├───secretary
+│   │       create_proposal.php
+│   │       dashboard.php
+│   │       edit_proposal.php
+│   │       submit_proposal.php
+│   │       view_proposal.php
+│   │
+│   ├───shared
+│   │       print_proposal.php
+│   │
+│   ├───student
+│   │       announcements.php
+│   │       dashboard.php
+│   │       view_proposal.php
+│   │
+│   └───treasurer
+│           dashboard.php
+│           review_proposal.php
+│           view_proposal.php
+|
+└───uploads
+
+| Component | Technology Used | Location / Evidence                        |
+| --------- | --------------- | ------------------------------------------ |
+| Frontend  | HTML, CSS, JS   | `assets/`, embedded in `.php` files        |
+| Backend   | PHP             | Root `.php` files, `pages/`, `includes/`   |
+| Database  | MySQL / MariaDB | `psits_portal_fresh.sql`, `db_connect.php` |
+
+✅ Frontend
+
+The frontend (what users see and interact with) is built using:
+
+HTML, CSS, and JavaScript
+
+Located mainly in the assets/ folder:
+
+assets/css/ → style.css, style-login.css
+
+assets/js/ → app.js, file-upload.js
+
+Also in .php files, HTML is embedded in PHP.
+
+✅ Backend
+
+The backend (logic, authentication, processing) is primarily:
+
+PHP
+
+The core of the backend system:
+
+index.php, validate_login.php, logout.php
+
+All files inside pages/, includes/, and config/
+
+Handles routing, sessions, user roles, and data interaction (CRUD operations).
+
+Backend logic components:
+
+includes/functions.php, includes/auth.php, config/db_connect.php
+
+Role-based dashboards in pages/[role]/
+
+✅ Database
+
+The database is:
+
+MySQL / MariaDB
+
+Based on the provided .sql file: psits_portal_fresh.sql
+
+Likely used via PHP’s mysqli or PDO for data interaction
+
+Connection handled in: config/db_connect.php
+

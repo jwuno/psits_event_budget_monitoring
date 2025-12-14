@@ -28,15 +28,6 @@ session_start();
             </div>
         </div>
 
-        <?php if (!empty($_SESSION['error'])): ?>
-            <div class="alert alert-error">
-                <?php
-                echo htmlspecialchars($_SESSION['error']);
-                unset($_SESSION['error']);
-                ?>
-            </div>
-        <?php endif; ?>
-
         <form action="validate_login.php" method="POST" class="login-form">
             <label for="username">Username</label>
             <div class="input-group">
@@ -53,12 +44,58 @@ session_start();
                 </span>
                 <input type="password" id="password" name="password" placeholder="Enter your password" required>
             </div>
+
+            <!-- Error / lockout message -->
+            <?php if (!empty($_SESSION['error'])): ?>
+                <div class="alert alert-error" style="color: red; font-weight: bold; text-align: center; margin-top: 10px;">
+                    <?php if (isset($_SESSION['lock_remaining'])): ?>
+                        Too many failed attempts. Try again in
+                        <span id="lock-timer"
+                              data-remaining="<?= (int) $_SESSION['lock_remaining']; ?>"></span>.
+                    <?php else: ?>
+                        <?= htmlspecialchars($_SESSION['error']); ?>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
+
             <button type="submit" name="login" class="btn-login">Login</button>
         </form>
 
     </div>
 
 </div>
+
+<?php
+// We unset AFTER rendering so JS still sees the value
+unset($_SESSION['error'], $_SESSION['lock_remaining']);
+?>
+
+<!-- Simple JS countdown -->
+<script>
+(function () {
+    const el = document.getElementById('lock-timer');
+    if (!el) return;
+
+    let remaining = parseInt(el.dataset.remaining, 10);
+    if (isNaN(remaining)) return;
+
+    function updateTimer() {
+        if (remaining < 0) remaining = 0;
+
+        const minutes = Math.floor(remaining / 60);
+        const seconds = remaining % 60;
+
+        el.textContent = minutes + "m " + String(seconds).padStart(2, '0') + "s";
+
+        if (remaining > 0) {
+            remaining--;
+            setTimeout(updateTimer, 1000);
+        }
+    }
+
+    updateTimer();
+})();
+</script>
 
 </body>
 </html>

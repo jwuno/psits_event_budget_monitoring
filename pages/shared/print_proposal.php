@@ -1,7 +1,6 @@
 <?php
 // pages/shared/print_proposal.php
 
-// Optional: only allow logged-in users
 session_start();
 if (!isset($_SESSION['user_id'])) {
     header('Location: ../../index.php');
@@ -39,11 +38,14 @@ function e($value) {
     return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
 }
 
-// Format dates
-$eventDate = !empty($proposal['event_date'])
-    ? date('F d, Y', strtotime($proposal['event_date']))
-    : 'N/A';
+// Event duration (new schema: event_start_date / event_end_date; fallback: event_date)
+$rawStart = $proposal['event_start_date'] ?? $proposal['event_date'] ?? null;
+$rawEnd   = $proposal['event_end_date'] ?? $rawStart;
 
+$eventStart = $rawStart ? date('F d, Y', strtotime($rawStart)) : 'N/A';
+$eventEnd   = $rawEnd   ? date('F d, Y', strtotime($rawEnd))   : 'N/A';
+
+// Date submitted
 $dateSubmitted = !empty($proposal['date_submitted'])
     ? date('F d, Y', strtotime($proposal['date_submitted']))
     : 'N/A';
@@ -53,6 +55,13 @@ function formatStatus($s) {
     if ($s === null || $s === '') return 'N/A';
     return ucfirst($s);
 }
+
+// Description & budget breakdown (new fields)
+$description = trim((string)($proposal['description'] ?? ''));
+$budgetBreakdown = trim((string)($proposal['budget_breakdown'] ?? ''));
+
+// Participants: use expected_participants
+$participants = $proposal['expected_participants'] ?? '';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -311,8 +320,13 @@ function formatStatus($s) {
                 <span class="info-value"><?php echo e($proposal['title']); ?></span>
             </div>
             <div>
-                <span class="info-label">Event Date:</span>
-                <span class="info-value"><?php echo e($eventDate); ?></span>
+                <span class="info-label">Event Duration:</span>
+                <span class="info-value">
+                    <?php echo e($eventStart); ?>
+                    <?php if ($eventEnd && $eventEnd !== $eventStart): ?>
+                        &nbsp;–&nbsp;<?php echo e($eventEnd); ?>
+                    <?php endif; ?>
+                </span>
             </div>
             <div>
                 <span class="info-label">Venue:</span>
@@ -320,7 +334,9 @@ function formatStatus($s) {
             </div>
             <div>
                 <span class="info-label">Target Participants:</span>
-                <span class="info-value"><?php echo e($proposal['participants'] ?? 'N/A'); ?></span>
+                <span class="info-value">
+                    <?php echo $participants !== '' ? e($participants) : 'N/A'; ?>
+                </span>
             </div>
             <div>
                 <span class="info-label">Proposed Budget (₱):</span>
@@ -335,32 +351,22 @@ function formatStatus($s) {
         </div>
     </div>
 
-    <!-- OBJECTIVES -->
-    <?php if (!empty($proposal['objectives'])): ?>
-        <div class="section">
-            <div class="section-title">Objectives</div>
-            <div class="section-body">
-                <?php echo e($proposal['objectives']); ?>
-            </div>
-        </div>
-    <?php endif; ?>
-
     <!-- DESCRIPTION / RATIONALE -->
-    <?php if (!empty($proposal['description'])): ?>
+    <?php if ($description !== ''): ?>
         <div class="section">
             <div class="section-title">Event Description / Rationale</div>
             <div class="section-body">
-                <?php echo e($proposal['description']); ?>
+                <?php echo e($description); ?>
             </div>
         </div>
     <?php endif; ?>
 
-    <!-- BUDGET NOTES -->
-    <?php if (!empty($proposal['budget_notes'])): ?>
+    <!-- BUDGET BREAKDOWN -->
+    <?php if ($budgetBreakdown !== ''): ?>
         <div class="section">
-            <div class="section-title">Budget Details / Notes</div>
+            <div class="section-title">Budget Breakdown</div>
             <div class="section-body">
-                <?php echo e($proposal['budget_notes']); ?>
+                <?php echo e($budgetBreakdown); ?>
             </div>
         </div>
     <?php endif; ?>
@@ -423,7 +429,6 @@ function formatStatus($s) {
 </div>
 
 <script>
-    // Optional: auto-open print dialog when page loads
     window.onload = function () {
         window.print();
     };

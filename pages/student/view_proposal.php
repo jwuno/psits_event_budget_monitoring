@@ -190,7 +190,7 @@ $eventEnd   = $proposal['event_end_date'] ?? $eventStart;
     <!-- Description -->
     <div class="card">
         <h2>Event Description / Rationale</h2>
-        <p style="white-space:pre-wrap;font-size:0.9rem;color:#111827;margin-top:0.5rem;">
+        <p style="white-space:pre-wrap;font-size:0.9rem;color:#111827;margin-top:0.5rem; max-height:220px;overflow-y:auto;padding-right:4px;">
             <?php echo $description !== '' ? htmlspecialchars($description) : 'No description provided.'; ?>
         </p>
     </div>
@@ -198,7 +198,7 @@ $eventEnd   = $proposal['event_end_date'] ?? $eventStart;
     <!-- Budget Breakdown -->
     <div class="card">
         <h2>Budget Breakdown</h2>
-        <p style="white-space:pre-wrap;font-size:0.9rem;color:#111827;margin-top:0.5rem;">
+        <p style="white-space:pre-wrap;font-size:0.9rem;color:#111827;margin-top:0.5rem; max-height:220px;overflow-y:auto;padding-right:4px;">
             <?php echo $breakdown !== '' ? htmlspecialchars($breakdown) : 'No detailed budget breakdown provided.'; ?>
         </p>
     </div>
