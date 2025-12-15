@@ -146,12 +146,6 @@ $annRes = mysqli_query($conn, $annSql);
         </div>
 
         <div class="stat-card">
-            <span class="stat-label">Pending Budget</span>
-            <span class="stat-value">₱<?php echo number_format($pendingBudget, 2); ?></span>
-            <span class="stat-helper"><?php echo $pendingCount; ?> awaiting approval</span>
-        </div>
-
-        <div class="stat-card">
             <span class="stat-label">Rejected Budget</span>
             <span class="stat-value">₱<?php echo number_format($rejectedBudget, 2); ?></span>
             <span class="stat-helper"><?php echo $rejectedCount; ?> rejected event(s)</span>
@@ -202,7 +196,8 @@ $annRes = mysqli_query($conn, $annSql);
             These events have been fully approved (Treasurer, President, and Adviser).
         </p>
 
-        <div class="table-wrapper">
+        <!-- Scrollable Container for Approved Events -->
+        <div class="table-wrapper" style="max-height: 300px; overflow-y: auto;">
             <table class="proposals-table">
                 <thead>
                     <tr>
@@ -248,36 +243,39 @@ $annRes = mysqli_query($conn, $annSql);
          ========================== -->
     <div class="card">
         <h2>Latest Announcements</h2>
-        <?php if (!$annRes || mysqli_num_rows($annRes) === 0): ?>
-            <p style="margin-top:0.5rem;color:#6b7280;">
-                No announcements yet. Please check back later.
-            </p>
-        <?php else: ?>
-            <ul style="list-style:none;padding:0;margin-top:0.5rem;">
-                <?php while ($a = mysqli_fetch_assoc($annRes)): ?>
-                    <li style="margin-bottom:0.75rem;border-bottom:1px solid #e5e7eb;padding-bottom:0.75rem;">
-                        <strong><?php echo htmlspecialchars($a['title']); ?></strong><br>
-                        <span style="font-size:0.85rem;color:#6b7280;">
-                            <?php if (!empty($a['event_title'])): ?>
-                                Related event: <?php echo htmlspecialchars($a['event_title']); ?>
-                                <?php if (!empty($a['event_date'])): ?>
-                                    · <?php echo htmlspecialchars($a['event_date']); ?>
+        <!-- Scrollable Container for Announcements -->
+        <div style="max-height: 300px; overflow-y: auto;">
+            <?php if (!$annRes || mysqli_num_rows($annRes) === 0): ?>
+                <p style="margin-top:0.5rem;color:#6b7280;">
+                    No announcements yet. Please check back later.
+                </p>
+            <?php else: ?>
+                <ul style="list-style:none;padding:0;margin-top:0.5rem;">
+                    <?php while ($a = mysqli_fetch_assoc($annRes)): ?>
+                        <li style="margin-bottom:0.75rem;border-bottom:1px solid #e5e7eb;padding-bottom:0.75rem;">
+                            <strong><?php echo htmlspecialchars($a['title']); ?></strong><br>
+                            <span style="font-size:0.85rem;color:#6b7280;">
+                                <?php if (!empty($a['event_title'])): ?>
+                                    Related event: <?php echo htmlspecialchars($a['event_title']); ?>
+                                    <?php if (!empty($a['event_date'])): ?>
+                                        · <?php echo htmlspecialchars($a['event_date']); ?>
+                                    <?php endif; ?>
+                                    <?php if (!empty($a['venue'])): ?>
+                                        · <?php echo htmlspecialchars($a['venue']); ?>
+                                    <?php endif; ?>
+                                    ·
                                 <?php endif; ?>
-                                <?php if (!empty($a['venue'])): ?>
-                                    · <?php echo htmlspecialchars($a['venue']); ?>
-                                <?php endif; ?>
-                                ·
-                            <?php endif; ?>
-                            Posted by <?php echo htmlspecialchars($a['created_by']); ?>
-                            on <?php echo htmlspecialchars($a['created_at']); ?>
-                        </span><br>
-                        <span style="font-size:0.9rem;white-space:pre-wrap;">
-                            <?php echo htmlspecialchars($a['content']); ?>
-                        </span>
-                    </li>
-                <?php endwhile; ?>
-            </ul>
-        <?php endif; ?>
+                                Posted by <?php echo htmlspecialchars($a['created_by']); ?>
+                                on <?php echo htmlspecialchars($a['created_at']); ?>
+                            </span><br>
+                            <span style="font-size:0.9rem;white-space:pre-wrap;">
+                                <?php echo htmlspecialchars($a['content']); ?>
+                            </span>
+                        </li>
+                    <?php endwhile; ?>
+                </ul>
+            <?php endif; ?>
+        </div>
     </div>
 </div>
 

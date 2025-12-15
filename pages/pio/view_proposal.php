@@ -31,9 +31,7 @@ if (!function_exists('renderStatusPill')) {
                 break;
         }
 
-        return '<span class="' . $class . '">' .
-               htmlspecialchars($label, ENT_QUOTES, 'UTF-8') .
-               '</span>';
+        return '<span class="' . $class . '">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</span>';
     }
 }
 
@@ -107,6 +105,7 @@ if (!empty($proposal['attachment_path'])) {
 }
 $attachmentUrl = $attachment !== '' ? '../../uploads/' . rawurlencode(basename($attachment)) : '';
 
+
 /* ---------- Handle inline announcement creation ---------- */
 $annSuccess = '';
 $annError   = '';
@@ -136,6 +135,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_announcement']
             $annSuccess = 'Announcement has been posted. Students can now see it under Latest Announcements.';
             // clear textarea after success
             $_POST['ann_content'] = '';
+            // Redirect back to dashboard after posting announcement
+            header("Location: dashboard.php");
+            exit;
         } else {
             $annError = 'Failed to save announcement. Please try again.';
         }
@@ -217,7 +219,7 @@ $defaultAnnContent = $_POST['ann_content'] ?? '';
                         <span><?php echo renderStatusPill($status); ?></span>
                     </div>
 
-                    <hr style="border:none;border-top:1px dashed #e5e7eb;margin:0.4rem 0;">
+                    <hr style="border:none;border-top:1px dashed #e5e7eb;margin:0.4rem 0;"> 
 
                     <div style="display:flex;justify-content:space-between;align-items:center;">
                         <span style="color:#6b7280;">Treasurer</span>

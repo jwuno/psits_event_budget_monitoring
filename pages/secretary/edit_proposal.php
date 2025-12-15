@@ -74,7 +74,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Sanitize inputs
     $title        = mysqli_real_escape_string($conn, $_POST['title'] ?? '');
     $description  = mysqli_real_escape_string($conn, $_POST['description'] ?? '');
-    $event_date   = mysqli_real_escape_string($conn, $_POST['event_date'] ?? '');
+    $event_start_date = mysqli_real_escape_string($conn, $_POST['event_start_date'] ?? '');
+    $event_end_date   = mysqli_real_escape_string($conn, $_POST['event_end_date'] ?? '');
     $venue        = mysqli_real_escape_string($conn, $_POST['venue'] ?? '');
     $participants = (int)($_POST['expected_participants'] ?? 0);
     $budget       = (float)($_POST['proposed_budget'] ?? 0);
@@ -107,12 +108,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $current_stage   = 'treasurer';
     $treasurerStatus = 'pending';
 
+    // Check if end date is earlier than start date
+    if ($event_start_date && $event_end_date && strtotime($event_end_date) < strtotime($event_start_date)) {
+        $_SESSION['error'] = 'Event end date cannot be earlier than the start date.';
+        header('Location: edit_proposal.php?id=' . $id);
+        exit;
+    }
+
     $update = "
         UPDATE proposals
         SET
             title                 = '$title',
             description           = '$description',
-            event_date            = '$event_date',
+            event_start_date      = '$event_start_date',
+            event_end_date        = " . ($event_end_date ? "'$event_end_date'" : "NULL") . ",
             venue                 = '$venue',
             expected_participants = $participants,
             proposed_budget       = $budget,
@@ -171,30 +180,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <div class="form-row">
                 <div class="form-group">
-                    <label for="event_date">Event Date</label>
-                    <input type="date" id="event_date" name="event_date"
-                           value="<?php echo htmlspecialchars($proposal['event_date']); ?>" required>
+                    <label for="event_start_date">Start Event Date</label>
+                    <input type="date" id="event_start_date" name="event_start_date"
+                           value="<?php echo htmlspecialchars($proposal['event_start_date']); ?>" required>
                 </div>
 
                 <div class="form-group">
-                    <label for="venue">Venue</label>
-                    <input type="text" id="venue" name="venue"
-                           value="<?php echo htmlspecialchars($proposal['venue']); ?>" required>
+                    <label for="event_end_date">End Event Date</label>
+                    <input type="date" id="event_end_date" name="event_end_date"
+                           value="<?php echo htmlspecialchars($proposal['event_end_date']); ?>">
                 </div>
             </div>
 
             <div class="form-row">
                 <div class="form-group">
+                    <label for="venue">Venue</label>
+                    <input type="text" id="venue" name="venue"
+                           value="<?php echo htmlspecialchars($proposal['venue']); ?>" required>
+                </div>
+
+                <div class="form-group">
                     <label for="expected_participants">Expected Participants</label>
                     <input type="number" id="expected_participants" name="expected_participants" min="1"
                            value="<?php echo (int)$proposal['expected_participants']; ?>" required>
                 </div>
+            </div>
 
-                <div class="form-group">
-                    <label for="proposed_budget">Proposed Budget (₱)</label>
-                    <input type="number" step="0.01" id="proposed_budget" name="proposed_budget"
-                           value="<?php echo htmlspecialchars($proposal['proposed_budget']); ?>" required>
-                </div>
+            <div class="form-group">
+                <label for="proposed_budget">Proposed Budget (₱)</label>
+                <input type="number" step="0.01" id="proposed_budget" name="proposed_budget"
+                       value="<?php echo htmlspecialchars($proposal['proposed_budget']); ?>" required>
             </div>
 
             <div class="form-group">

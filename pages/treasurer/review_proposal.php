@@ -250,11 +250,26 @@ $eventSchedule = formatEventSchedule($proposal);
                         </tr>
                         <tr>
                             <th>Event Schedule</th>
-                            <td><?php echo htmlspecialchars($eventSchedule); ?></td>
+                            <td>
+                                <?php if ($isEditable): ?>
+                                    <div style="display: flex; gap: 1rem;">
+                                        <input type="date" name="event_start_date" value="<?php echo htmlspecialchars($proposal['event_start_date']); ?>" required>
+                                        <input type="date" name="event_end_date" value="<?php echo htmlspecialchars($proposal['event_end_date']); ?>" required>
+                                    </div>
+                                <?php else: ?>
+                                    <?php echo htmlspecialchars($eventSchedule); ?>
+                                <?php endif; ?>
+                            </td>
                         </tr>
                         <tr>
                             <th>Venue</th>
-                            <td><?php echo htmlspecialchars($proposal['venue']); ?></td>
+                            <td>
+                                <?php if ($isEditable): ?>
+                                    <input type="text" name="venue" value="<?php echo htmlspecialchars($proposal['venue']); ?>" required>
+                                <?php else: ?>
+                                    <?php echo htmlspecialchars($proposal['venue']); ?>
+                                <?php endif; ?>
+                            </td>
                         </tr>
                         <tr>
                             <th>Expected Participants</th>
