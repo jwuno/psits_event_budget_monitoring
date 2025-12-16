@@ -11,8 +11,15 @@ if ($id <= 0) {
     exit;
 }
 
-// Fetch proposal
-$sql = "SELECT * FROM proposals WHERE id = $id";
+$sql = "
+    SELECT 
+        p.*,
+        u.full_name AS created_by_name
+    FROM proposals p
+    LEFT JOIN users u ON p.created_by = u.username
+    WHERE p.id = $id
+";
+
 $res = mysqli_query($conn, $sql);
 
 if (!$res || mysqli_num_rows($res) === 0) {
@@ -292,7 +299,7 @@ $eventSchedule = formatEventSchedule($proposal);
                         </tr>
                         <tr>
                             <th>Prepared By</th>
-                            <td><?php echo htmlspecialchars($proposal['created_by']); ?></td>
+                            <td><?php echo !empty($proposal['created_by_name']) ? htmlspecialchars($proposal['created_by_name']) : htmlspecialchars($proposal['created_by']); ?></td>
                         </tr>
                         <tr>
                             <th>Date Submitted</th>

@@ -5,13 +5,16 @@ requireRole('pio');
 require_once '../../config/db_connect.php';
 include '../../includes/header.php';
 
-// Get all FINAL APPROVED proposals
 $sql = "
-    SELECT *
-    FROM proposals
-    WHERE status = 'approved'
-    ORDER BY event_date ASC, date_submitted DESC
+    SELECT 
+        p.*,
+        u.full_name AS prepared_by_name
+    FROM proposals p
+    LEFT JOIN users u ON p.created_by = u.username
+    WHERE p.status = 'approved'
+    ORDER BY p.event_date ASC, p.date_submitted DESC
 ";
+
 $res = mysqli_query($conn, $sql);
 ?>
 
@@ -51,7 +54,7 @@ $res = mysqli_query($conn, $sql);
                                 <td><?php echo htmlspecialchars($row['event_date']); ?></td>
                                 <td><?php echo htmlspecialchars($row['venue']); ?></td>
                                 <td>₱<?php echo number_format($row['proposed_budget'], 2); ?></td>
-                                <td><?php echo htmlspecialchars($row['created_by']); ?></td>
+                                <td><?php echo !empty($row['prepared_by_name']) ? htmlspecialchars($row['prepared_by_name']) : htmlspecialchars($row['created_by']); ?></td>
                                 <td style="text-align:center;">
                                     <a href="view_proposal.php?id=<?php echo (int)$row['id']; ?>"
                                        class="btn-light-pill">
@@ -76,12 +79,17 @@ $res = mysqli_query($conn, $sql);
         <div style="max-height: 300px; overflow-y: auto;">
             <?php 
             $annSql = "
-                SELECT a.*, p.title AS event_title, p.event_date, p.venue
+                SELECT 
+                    a.*,
+                    p.title AS event_title,
+                    p.event_date,
+                    p.venue,
+                    u.full_name AS posted_by_name
                 FROM announcements a
                 LEFT JOIN proposals p ON a.proposal_id = p.id
+                LEFT JOIN users u ON a.created_by = u.username
                 ORDER BY a.created_at DESC
-                LIMIT 3
-            ";
+                ";
             $annRes = mysqli_query($conn, $annSql);
             
             if (!$annRes || mysqli_num_rows($annRes) === 0): ?>
@@ -104,7 +112,7 @@ $res = mysqli_query($conn, $sql);
                                     <?php endif; ?>
                                     ·
                                 <?php endif; ?>
-                                Posted by <?php echo htmlspecialchars($a['created_by']); ?>
+                                Posted by <?php echo !empty($a['posted_by_name']) ? htmlspecialchars($a['posted_by_name']) : htmlspecialchars($a['created_by']); ?>
                                 on <?php echo htmlspecialchars($a['created_at']); ?>
                             </span><br>
                             <span style="font-size:0.9rem;white-space:pre-wrap;">

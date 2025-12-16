@@ -62,6 +62,7 @@ $sql = "
     WHERE p.id = $proposalId
     LIMIT 1
 ";
+
 $res = mysqli_query($conn, $sql);
 $proposal = ($res && mysqli_num_rows($res) > 0) ? mysqli_fetch_assoc($res) : null;
 
