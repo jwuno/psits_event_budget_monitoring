@@ -614,3 +614,36 @@ img {
     background: #e5e7eb;
     color: #374151;
 }
+
+@media print {
+    /* Signature container is aligned to the left */
+    .signature-container {
+        width: 100%; /* Full width */
+        text-align: left; /* Align signature to left */
+        padding-left: 2rem; /* Optional, move from the left edge */
+        margin-top: 3rem; /* Space above the signature */
+    }
+
+    /* Signature block */
+    .signature-block {
+        display: inline-block; /* Makes the signature line inline */
+        width: 100%; /* Ensures it spans the full available width */
+    }
+
+    /* Signature line style */
+    .signature-line {
+        width: 200px; /* Adjust to desired width */
+        border-bottom: 1px solid #000; /* Creates the signature line */
+        margin-bottom: 10px; /* Space between the line and the label */
+    }
+
+    /* Signature label styling */
+    .signature-label {
+        font-weight: bold;
+        font-size: 1rem;
+        text-transform: uppercase;
+        margin-left: 0.25rem; /* Space between the line and the label */
+    }
+}
+
+

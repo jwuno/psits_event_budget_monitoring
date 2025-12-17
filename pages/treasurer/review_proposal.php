@@ -41,19 +41,12 @@ if (!$res || mysqli_num_rows($res) === 0) {
 $proposal     = mysqli_fetch_assoc($res);
 $description  = trim((string)($proposal['description'] ?? ''));
 
-/**
- * Event Schedule (duration) formatter
- * Uses:
- *   - event_start_date + event_end_date  (preferred)
- *   - falls back to event_date if start is empty
- */
 function formatEventSchedule(array $proposal): string
 {
     $start  = $proposal['event_start_date'] ?? '';
     $end    = $proposal['event_end_date'] ?? '';
     $single = $proposal['event_date'] ?? '';
 
-    // No start date but we have the old single event_date
     if (empty($start) && !empty($single)) {
         $ts = strtotime($single);
         return $ts ? date('F j, Y', $ts) : $single;
@@ -63,7 +56,6 @@ function formatEventSchedule(array $proposal): string
         return 'Not set';
     }
 
-    // One-day event
     if (empty($end) || $end === $start) {
         $ts = strtotime($start);
         return $ts ? date('F j, Y', $ts) : $start;
@@ -76,41 +68,29 @@ function formatEventSchedule(array $proposal): string
         return trim($start . ' - ' . $end);
     }
 
-    // Same year
     if (date('Y', $startTs) === date('Y', $endTs)) {
-        // Same month
         if (date('m', $startTs) === date('m', $endTs)) {
             return date('F j', $startTs) . '–' . date('j, Y', $endTs);
         }
-        // Different month, same year
         return date('F j', $startTs) . ' – ' . date('F j, Y', $endTs);
     }
 
-    // Different year
     return date('F j, Y', $startTs) . ' – ' . date('F j, Y', $endTs);
 }
 
-/**
- * Treasurer can edit certain fields ONLY when:
- *   - it is currently at Treasurer stage
- *   - AND status is "returned"
- *   - AND it was returned by the President
- */
 $isEditable =
     $proposal['current_stage'] === 'treasurer' &&
     $proposal['status'] === 'returned' &&
     $proposal['returned_from'] === 'president';
 
-/* ---------- Handle POST (Approve / Return) ---------- */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $remarks = mysqli_real_escape_string($conn, $_POST['treasurer_remarks'] ?? '');
     $now     = date('Y-m-d H:i:s');
     $user    = mysqli_real_escape_string($conn, $_SESSION['username'] ?? 'treasurer');
 
-    // Start with existing values
-    $newBudget              = (float)$proposal['proposed_budget'];
-    $newParticipants        = (int)$proposal['expected_participants'];
-    $newBudgetBreakdownRaw  = $proposal['budget_breakdown'];
+    $newBudget             = (float)$proposal['proposed_budget'];
+    $newParticipants       = (int)$proposal['expected_participants'];
+    $newBudgetBreakdownRaw = $proposal['budget_breakdown'];
 
     if ($isEditable) {
         if (isset($_POST['proposed_budget'])) {
@@ -127,7 +107,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $newBudgetBreakdown = mysqli_real_escape_string($conn, $newBudgetBreakdownRaw);
 
     if (isset($_POST['action_approve'])) {
-        // Approve & forward to President
         $status           = 'pending';
         $current_stage    = 'president';
         $treasurer_status = 'approved';
@@ -147,17 +126,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 budget_breakdown      = '$newBudgetBreakdown'
             WHERE id = $id
         ";
-
-        if (mysqli_query($conn, $update)) {
-            $_SESSION['success'] = 'Proposal updated and forwarded to the President.';
-            header('Location: dashboard.php');
-            exit;
-        } else {
-            $_SESSION['error'] = 'Error updating proposal: ' . mysqli_error($conn);
-        }
-
     } elseif (isset($_POST['action_return'])) {
-        // Return to Secretary
         $status           = 'returned';
         $current_stage    = 'secretary';
         $treasurer_status = 'returned';
@@ -178,24 +147,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 budget_breakdown      = '$newBudgetBreakdown'
             WHERE id = $id
         ";
-
-        if (mysqli_query($conn, $update)) {
-            $_SESSION['success'] = 'Proposal updated and returned to the Secretary with your remarks.';
-            header('Location: dashboard.php');
-            exit;
-        } else {
-            $_SESSION['error'] = 'Error updating proposal: ' . mysqli_error($conn);
-        }
     }
 
-    // If there was an error, reload the latest proposal data
-    $res = mysqli_query($conn, "SELECT * FROM proposals WHERE id = $id");
-    $proposal    = mysqli_fetch_assoc($res);
-    $description = trim((string)($proposal['description'] ?? ''));
-    $isEditable =
-        $proposal['current_stage'] === 'treasurer' &&
-        $proposal['status'] === 'returned' &&
-        $proposal['returned_from'] === 'president';
+    if (isset($update) && mysqli_query($conn, $update)) {
+        $_SESSION['success'] = 'Proposal updated successfully.';
+        header('Location: dashboard.php');
+        exit;
+    }
 }
 
 $eventSchedule = formatEventSchedule($proposal);
@@ -246,69 +204,40 @@ $eventSchedule = formatEventSchedule($proposal);
     <!-- Single form for all editable fields -->
     <form action="review_proposal.php?id=<?php echo $id; ?>" method="post">
         <!-- Event info -->
-        <div class="card">
-            <h2>Event Information</h2>
-            <div class="table-wrapper">
-                <table class="proposals-table">
-                    <tbody>
-                        <tr>
-                            <th style="width:220px;">Event Title</th>
-                            <td><?php echo htmlspecialchars($proposal['title']); ?></td>
-                        </tr>
-                        <tr>
-                            <th>Event Schedule</th>
-                            <td>
-                                <?php if ($isEditable): ?>
-                                    <div style="display: flex; gap: 1rem;">
-                                        <input type="date" name="event_start_date" value="<?php echo htmlspecialchars($proposal['event_start_date']); ?>" required>
-                                        <input type="date" name="event_end_date" value="<?php echo htmlspecialchars($proposal['event_end_date']); ?>" required>
-                                    </div>
-                                <?php else: ?>
-                                    <?php echo htmlspecialchars($eventSchedule); ?>
-                                <?php endif; ?>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th>Venue</th>
-                            <td>
-                                <?php if ($isEditable): ?>
-                                    <input type="text" name="venue" value="<?php echo htmlspecialchars($proposal['venue']); ?>" required>
-                                <?php else: ?>
-                                    <?php echo htmlspecialchars($proposal['venue']); ?>
-                                <?php endif; ?>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th>Expected Participants</th>
-                            <td>
-                                <?php if ($isEditable): ?>
-                                    <input
-                                        type="number"
-                                        id="expected_participants"
-                                        name="expected_participants"
-                                        min="1"
-                                        value="<?php echo (int)$proposal['expected_participants']; ?>"
-                                    >
-                                    <p style="font-size:0.8rem;color:#6b7280;margin-top:0.25rem;">
-                                        Editable because this proposal was returned by the President for adjustment.
-                                    </p>
-                                <?php else: ?>
-                                    <?php echo (int)$proposal['expected_participants']; ?>
-                                <?php endif; ?>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th>Prepared By</th>
-                            <td><?php echo !empty($proposal['created_by_name']) ? htmlspecialchars($proposal['created_by_name']) : htmlspecialchars($proposal['created_by']); ?></td>
-                        </tr>
-                        <tr>
-                            <th>Date Submitted</th>
-                            <td><?php echo htmlspecialchars($proposal['date_submitted']); ?></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+    <div class="card">
+        <h2>Event Information</h2>
+        <div class="table-wrapper">
+            <table class="proposals-table">
+                <tbody>
+                    <tr>
+                        <th style="width:220px;">Event Title</th>
+                        <td><?php echo htmlspecialchars($proposal['title']); ?></td>
+                    </tr>
+                    <tr>
+                        <th>Event Schedule</th>
+                        <td><?php echo htmlspecialchars($eventSchedule); ?></td>
+                    </tr>
+                    <tr>
+                        <th>Venue</th>
+                        <td><?php echo htmlspecialchars($proposal['venue']); ?></td>
+                    </tr>
+                    <tr>
+                        <th>Expected Participants</th>
+                        <td><?php echo htmlspecialchars($proposal['expected_participants']); ?></td>
+                    </tr>
+                    <tr>
+                        <th>Prepared By</th>
+                        <td><?php echo !empty($proposal['created_by_name']) ? htmlspecialchars($proposal['created_by_name']) : htmlspecialchars($proposal['created_by']); ?></td>
+                    </tr>
+                    <tr>
+                        <th>Date Submitted</th>
+                        <td><?php echo htmlspecialchars($proposal['date_submitted']); ?></td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
+    </div>
+
 
         <!-- Description -->
         <div class="card">

@@ -62,7 +62,7 @@ $forReview = mysqli_query(
      FROM proposals
      WHERE status = 'pending'
        AND current_stage = 'president'
-     ORDER BY date_submitted ASC"
+     ORDER BY date_submitted DESC"
 );
 
 // Recently processed by President (shows combined status)

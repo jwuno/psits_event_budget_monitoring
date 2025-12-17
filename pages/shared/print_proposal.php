@@ -371,62 +371,14 @@ $participants = $proposal['expected_participants'] ?? '';
         </div>
     <?php endif; ?>
 
-    <!-- STATUS / REMARKS -->
-    <div class="section">
-        <div class="section-title">Approval Status</div>
-        <div class="status-row">
-            <div class="status-box">
-                <strong>Treasurer</strong>
-                <div class="status-value">
-                    <?php echo formatStatus($proposal['treasurer_status'] ?? ''); ?>
-                </div>
-                <?php if (!empty($proposal['treasurer_remarks'])): ?>
-                    <div class="remarks-text">
-                        <?php echo e($proposal['treasurer_remarks']); ?>
-                    </div>
-                <?php endif; ?>
-            </div>
-            <div class="status-box">
-                <strong>President</strong>
-                <div class="status-value">
-                    <?php echo formatStatus($proposal['president_status'] ?? ''); ?>
-                </div>
-                <?php if (!empty($proposal['president_remarks'])): ?>
-                    <div class="remarks-text">
-                        <?php echo e($proposal['president_remarks']); ?>
-                    </div>
-                <?php endif; ?>
-            </div>
-            <div class="status-box">
-                <strong>Adviser</strong>
-                <div class="status-value">
-                    <?php echo formatStatus($proposal['adviser_status'] ?? ''); ?>
-                </div>
-                <?php if (!empty($proposal['adviser_remarks'])): ?>
-                    <div class="remarks-text">
-                        <?php echo e($proposal['adviser_remarks']); ?>
-                    </div>
-                <?php endif; ?>
-            </div>
-        </div>
-    </div>
-
     <!-- SIGNATURE LINES (for printing) -->
-    <div class="signatures">
-        <div class="signature-block">
-            <div class="signature-line"></div>
-            <div class="signature-label">Secretary</div>
-        </div>
-        <div class="signature-block">
-            <div class="signature-line"></div>
-            <div class="signature-label">Treasurer</div>
-        </div>
-        <div class="signature-block">
-            <div class="signature-line"></div>
-            <div class="signature-label">Adviser</div>
-        </div>
+<div class="signature-container">
+    <div class="signature-block">
+        <div class="signature-line"></div>
+        <div class="signature-label">Adviser</div>
     </div>
 </div>
+
 
 <script>
     window.onload = function () {

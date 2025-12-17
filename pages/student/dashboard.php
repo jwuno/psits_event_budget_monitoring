@@ -9,11 +9,12 @@ include '../../includes/header.php';
    SUMMARY COUNTS / BUDGETS
    ========================== */
 
-// Count proposals by status (org-wide)
+// Initialize the counters for statuses
 $pendingCount  = 0;
 $approvedCount = 0;
 $rejectedCount = 0;
 
+// Query to count proposals by status (pending, approved, rejected)
 $statusRes = mysqli_query($conn, "
     SELECT status, COUNT(*) AS cnt
     FROM proposals
@@ -35,7 +36,7 @@ if ($statusRes) {
     }
 }
 
-// Budget totals by status
+// Query to get the total budget by status (approved, pending, rejected)
 $approvedBudget = 0;
 $pendingBudget  = 0;
 $rejectedBudget = 0;
@@ -63,10 +64,19 @@ if ($budgetRes) {
 }
 
 /* ==========================
+   TOTAL PROPOSALS COUNT
+   ========================== */
+
+// Fetch total number of proposals in the system (all proposals regardless of status)
+$totalRes = mysqli_query($conn, "SELECT COUNT(*) AS total FROM proposals");
+$totalRow = mysqli_fetch_assoc($totalRes);
+$totalProposals = (int)$totalRow['total'];
+
+/* ==========================
    APPROVED EVENTS TABLE
    ========================== */
 
-// use full_name instead of username/email
+// Fetch all approved proposals (those that are fully approved)
 $approvedEventsSql = "
     SELECT p.id,
            p.title,
@@ -78,7 +88,7 @@ $approvedEventsSql = "
     LEFT JOIN users u
         ON p.created_by = u.username
     WHERE p.status = 'approved'
-    ORDER BY p.event_date ASC, p.date_submitted DESC
+    ORDER BY p.date_submitted DESC
 ";
 $approvedEventsRes = mysqli_query($conn, $approvedEventsSql);
 
@@ -86,6 +96,7 @@ $approvedEventsRes = mysqli_query($conn, $approvedEventsSql);
    MONTHLY ACTIVITY (REAL DATA)
    ========================== */
 
+// Create the labels for each month
 $monthLabels = [];
 $monthCountsMap = [];
 for ($m = 1; $m <= 12; $m++) {
@@ -95,6 +106,7 @@ for ($m = 1; $m <= 12; $m++) {
 
 $year = date('Y');
 
+// Query to get the count of proposals submitted each month this year
 $monthlyRes = mysqli_query($conn, "
     SELECT MONTH(date_submitted) AS month_num, COUNT(*) AS total
     FROM proposals
@@ -154,9 +166,15 @@ $annRes = mysqli_query($conn, $annSql);
         <div class="stat-card">
             <span class="stat-label">Total Proposals</span>
             <span class="stat-value">
-                <?php echo $pendingCount + $approvedCount + $rejectedCount; ?>
+                <?php echo $totalProposals; ?>
             </span>
             <span class="stat-helper">All PSITS proposals encoded in the system</span>
+        </div>
+
+        <div class="stat-card">
+            <span class="stat-label">Pending Proposals</span>
+            <span class="stat-value"><?php echo $pendingCount; ?></span>
+            <span class="stat-helper"><?php echo $pendingCount; ?> pending event(s)</span>
         </div>
     </div>
 

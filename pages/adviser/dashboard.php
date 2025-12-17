@@ -96,7 +96,7 @@ $forDecision = mysqli_query(
      FROM proposals
      WHERE status = 'pending'
        AND current_stage = 'adviser'
-     ORDER BY date_submitted ASC"
+     ORDER BY date_submitted DESC"
 );
 
 $history = mysqli_query(

@@ -30,8 +30,8 @@ if (!function_exists('renderStatusPill')) {
                 break;
         }
 
-        return '<span class="' . $class . '">' .
-               htmlspecialchars($label, ENT_QUOTES, 'UTF-8') .
+        return '<span class="' . $class . '">' . 
+               htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . 
                '</span>';
     }
 }
@@ -54,7 +54,7 @@ if ($proposalId <= 0) {
 
 /* ----- Fetch proposal + prepared_by ----- */
 $sql = "
-    SELECT p.*,
+    SELECT p.*, 
            u.full_name AS prepared_by
     FROM proposals p
     LEFT JOIN users u
@@ -107,15 +107,9 @@ if (!empty($proposal['attachment_path'])) {
 }
 $attachmentUrl = $attachment !== '' ? '../../uploads/' . rawurlencode(basename($attachment)) : '';
 
-/* Can this Secretary edit & resubmit? */
-$canEditResubmit = false;
-if (
-    strtolower($status) === 'returned'
-    && isset($_SESSION['username'])
-    && $proposal['created_by'] === $_SESSION['username']
-) {
-    $canEditResubmit = true;
-}
+// Check if the proposal is approved and the current stage is adviser
+$canPrint = strtolower($proposal['status']) === 'approved' && strtolower($proposal['current_stage']) === 'adviser';
+
 ?>
 <div class="dashboard">
     <div class="dashboard-header" style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
@@ -125,17 +119,16 @@ if (
         </div>
         <div style="display:flex;gap:0.5rem;flex-wrap:wrap;justify-content:flex-end;">
             <a href="dashboard.php" class="btn btn-sm">← Back to Dashboard</a>
-            <a href="../shared/print_proposal.php?id=<?php echo (int)$proposalId; ?>"
-            target="_blank"
-            class="btn btn-sm btn-primary">
-            <i class="fa-solid fa-print"></i> Print Proposal
-            </a>
 
-            <?php if ($canEditResubmit): ?>
-                <a href="edit_proposal.php?id=<?php echo (int)$proposalId; ?>"
+            <!-- Only show the print button if the proposal is final approved -->
+            <?php if ($canPrint): ?>
+                <a href="../shared/print_proposal.php?id=<?php echo (int)$proposalId; ?>"
+                   target="_blank"
                    class="btn btn-sm btn-primary">
-                    Edit &amp; Resubmit Proposal
+                    <i class="fa-solid fa-print"></i> Print Proposal
                 </a>
+            <?php else: ?>
+                <span class="btn btn-sm" style="background-color: #e5e7eb; color: #6b7280;">Proposal not approved for printing</span>
             <?php endif; ?>
         </div>
     </div>
@@ -149,14 +142,6 @@ if (
                 · Submitted on <?php echo htmlspecialchars($dateSubmitted); ?>
             <?php endif; ?>
         </p>
-
-        <?php if (strtolower($status) === 'returned' && $returnedFrom !== ''): ?>
-            <p style="margin-top:0.4rem;font-size:0.85rem;color:#b45309;background:#fffbeb;border:1px solid #fbbf24;padding:0.45rem 0.55rem;border-radius:8px;">
-                This proposal was <strong>returned for revision</strong> by
-                <strong><?php echo htmlspecialchars(ucfirst($returnedFrom)); ?></strong>.
-                Please review the comments in the returned notification and update the details as needed.
-            </p>
-        <?php endif; ?>
 
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.25rem;margin-top:1.25rem;">
             <!-- Event Summary -->

@@ -12,7 +12,7 @@ $sql = "
     FROM proposals p
     LEFT JOIN users u ON p.created_by = u.username
     WHERE p.status = 'approved'
-    ORDER BY p.event_date ASC, p.date_submitted DESC
+    ORDER BY p.date_submitted DESC
 ";
 
 $res = mysqli_query($conn, $sql);

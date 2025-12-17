@@ -23,7 +23,7 @@ session_start();
                 <img src="assets/img/psits.png" alt="PSITS Logo">
             </div>
             <div class="login-brand-text">
-                <h1 class="login-title">PSITS Event &amp; Budget Portal</h1>
+                <h1 class="login-title">PSITS Event &amp; Budget Monitoring Portal</h1>
                 <p class="login-subtitle">BSIT – PSITS Pagadian Annex</p>
             </div>
         </div>
