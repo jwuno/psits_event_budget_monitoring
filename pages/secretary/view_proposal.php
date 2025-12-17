@@ -107,9 +107,6 @@ if (!empty($proposal['attachment_path'])) {
 }
 $attachmentUrl = $attachment !== '' ? '../../uploads/' . rawurlencode(basename($attachment)) : '';
 
-// Check if the proposal is approved and the current stage is adviser
-$canPrint = strtolower($proposal['status']) === 'approved' && strtolower($proposal['current_stage']) === 'adviser';
-
 ?>
 <div class="dashboard">
     <div class="dashboard-header" style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
@@ -121,15 +118,12 @@ $canPrint = strtolower($proposal['status']) === 'approved' && strtolower($propos
             <a href="dashboard.php" class="btn btn-sm">← Back to Dashboard</a>
 
             <!-- Only show the print button if the proposal is final approved -->
-            <?php if ($canPrint): ?>
+            <?php ($canPrint) ?>
                 <a href="../shared/print_proposal.php?id=<?php echo (int)$proposalId; ?>"
                    target="_blank"
                    class="btn btn-sm btn-primary">
                     <i class="fa-solid fa-print"></i> Print Proposal
                 </a>
-            <?php else: ?>
-                <span class="btn btn-sm" style="background-color: #e5e7eb; color: #6b7280;">Proposal not approved for printing</span>
-            <?php endif; ?>
         </div>
     </div>
 
@@ -191,11 +185,6 @@ $canPrint = strtolower($proposal['status']) === 'approved' && strtolower($propos
                     <div style="display:flex;justify-content:space-between;align-items:center;">
                         <span style="color:#6b7280;">Overall Status</span>
                         <span><?php echo renderStatusPill($status); ?></span>
-                    </div>
-
-                    <div style="display:flex;justify-content:space-between;align-items:center;">
-                        <span style="color:#6b7280;">Current Stage</span>
-                        <span style="font-weight:500;"><?php echo htmlspecialchars(ucfirst($currentStage ?: 'N/A')); ?></span>
                     </div>
 
                     <hr style="border:none;border-top:1px dashed #e5e7eb;margin:0.4rem 0;">
