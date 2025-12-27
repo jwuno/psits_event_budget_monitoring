@@ -134,7 +134,6 @@ $annSql = "
     FROM announcements a
     LEFT JOIN proposals p ON a.proposal_id = p.id
     ORDER BY a.created_at DESC
-    LIMIT 3
 ";
 $annRes = mysqli_query($conn, $annSql);
 ?>
